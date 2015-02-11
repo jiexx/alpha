@@ -33,6 +33,6 @@ public class Utils {
 	
 	static String decodeDES(byte[] d) throws Exception {
 		cipher.init(Cipher.DECRYPT_MODE, key, ips);
-		return new String(cipher.doFinal(Base64.encodeToString(d, Base64.NO_WRAP).getBytes()));
+		return new String(cipher.doFinal(Base64.decode(d, Base64.NO_WRAP)));
 	}
 }
