@@ -4,34 +4,49 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MessageQueue implements Runnable {
-	private class Node {
-		public long CreateTime;
-		public long ReceiveTime;
-		final public Message MSG;
-		public Node( final Message msg ) {
-			CreateTime = System.currentTimeMillis();
-			MSG = msg;
+	private static final int QUEUE_MAX_SIZE = 20;
+	private List<Message> mQueue = new ArrayList<Message>();
+	private Dispatcher mDispatcher;
+	public MessageQueue( Dispatcher d ) {
+		mDispatcher = d;
+	}
+	public Message dequeue() {
+		synchronized(mQueue) {
+			Message msg = mQueue.get(0);
+			mQueue.remove(0);
+			return msg;
 		}
 	}
-	private List<Node> mSndQueue = new ArrayList<Node>();
-	private List<Node> mRcvQueue = new ArrayList<Node>();
-	private Dispatcher mDispatcher = new Dispatcher();
-	public synchronized void enqueue( final Message msg ){
-		mSndQueue.add( new Node(msg) );
+	public void enqueue( final Message msg ) throws Exception{
+		synchronized(mQueue) {
+			if( mQueue.size() < QUEUE_MAX_SIZE ) {
+				mQueue.add( msg );
+				mQueue.notify();
+			} else {
+				mQueue.notify();
+				throw new Exception(Log.Error.ERR_MAX_QUEUE);
+			}
+		}
 	}
-	public synchronized Message dequeue(){
-		Node n = mSndQueue.get(0);
-		mSndQueue.remove(0);
-		mRcvQueue.add(n);
-		return n.MSG;
-	}
-	public synchronized void loop() {
-		dequeue().onRequest(mDispatcher);
+	public void loop() {
+		synchronized(mQueue) {
+			try {
+				if( !mQueue.isEmpty() ) {
+					Message msg = mQueue.get(0);
+					msg.onRequest( mDispatcher );
+				}else {
+					mQueue.wait();				
+				}
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 	@Override
 	public void run() {
 		// TODO Auto-generated method stub
-		for( Node n : mSndQueue ) {
+		while( true ) {
 			loop();
 		}
 	}

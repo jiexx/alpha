@@ -1,12 +1,14 @@
 package com.jiexx.comm;
 
-public class HttpMessage implements Message {
+public class ImMessage implements Message {
 	private Data mData;
-	public long CreateTime;
-	public long ReceiveTime;
-	public HttpMessage( Data d ) {
-		CreateTime = System.currentTimeMillis();
+	
+	public ImMessage( Data d ) {
 		mData = d;
+	}
+	
+	public Data getData() {
+		return mData;
 	}
 	
 	public String toStr() throws Exception {

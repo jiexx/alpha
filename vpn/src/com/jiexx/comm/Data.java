@@ -1,7 +1,12 @@
 package com.jiexx.comm;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+
+import org.json.JSONException;
+import org.json.JSONStringer;
+
 
 
 public class Data {
@@ -17,6 +22,26 @@ public class Data {
 			else if( o instanceof Data )
 				return Type.Data;
 			return null;
+		}
+		public static void toJSON( JSONStringer json, String name, Value v ) {
+			try {
+				json.object();
+				if( v.type() == Type.String || v.type() == Type.Integer ) {
+					json.key(name);
+					json.value(v.obj());
+				}else if ( v.type() == Type.Data ) {
+					toJSON( json, name, v );
+				}else if ( v.type() == Type.Array ) {
+					List<Value> list = (List<Value>) v.obj();
+					for( int i = 0 ; i < list.size() ; i ++ ) {
+						toJSON( json, name, list.get(i) );
+					}
+				}
+				json.endObject();
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	};
 	private class Value {
@@ -37,8 +62,11 @@ public class Data {
 			mObj = o;
 		}
 	}
-	private static HashMap<String,Value> mCache = new HashMap<String,Value>();
+	private HashMap<String,Value> mCache = new HashMap<String,Value>();
 	public void define( String def ) {
+		
+	}
+	public Data( String base64str ) {
 		
 	}
 	
@@ -66,5 +94,16 @@ public class Data {
 	}
 	public Data getData( String name ) {
 		return (Data) mCache.get(name).obj();
+	}
+	public String getBase64Str() throws Exception {
+		JSONStringer json = new JSONStringer();
+		
+		Iterator iter = mCache.entrySet().iterator();
+		while (iter.hasNext()) {
+			HashMap.Entry entry = (HashMap.Entry) iter.next();
+			Type.toJSON(json, (String)entry.getKey(), (Value)entry.getKey() );
+		}
+		
+		return Utils.encodeDES( json.toString() );
 	}
 }
