@@ -21,17 +21,21 @@ public class Utils {
 	private static Cipher cipher = null;
 	
 	static void initDES( String k ) throws Exception {
-		key = new SecretKeySpec(k.getBytes(), "DES"); 
+		initKey( k );
 		if( cipher == null )
 			cipher = Cipher.getInstance("DES/CBC/PKCS5Padding");
 	}
 	
-	static String encodeDES(String d) throws Exception {
+	static void initKey( String k ) throws Exception {
+		key = new SecretKeySpec(k.getBytes(), "DES"); 
+	}
+	
+	public static String encodeDES(String d) throws Exception {
 		cipher.init(Cipher.ENCRYPT_MODE, key, ips); 
 		return Base64.encodeToString(cipher.doFinal(d.getBytes()), Base64.NO_WRAP);
 	}
 	
-	static String decodeDES(byte[] d) throws Exception {
+	public static String decodeDES(byte[] d) throws Exception {
 		cipher.init(Cipher.DECRYPT_MODE, key, ips);
 		return new String(cipher.doFinal(Base64.decode(d, Base64.NO_WRAP)));
 	}

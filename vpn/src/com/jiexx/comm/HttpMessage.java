@@ -1,16 +1,14 @@
 package com.jiexx.comm;
 
+import com.jiexx.cmd.Command;
+
 public class HttpMessage implements Message {
-	private Data mData;
 	public long CreateTime;
 	public long ReceiveTime;
-	public HttpMessage( Data d ) {
+	public Command cmd;
+	public HttpMessage( Command d ) {
 		CreateTime = System.currentTimeMillis();
-		mData = d;
-	}
-	
-	public String toStr() throws Exception {
-		return mData.getBase64Str();
+		cmd = d;
 	}
 	
 	public void onResponse( Data d ){

@@ -22,6 +22,8 @@ import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.util.EntityUtils;
 
+import com.jiexx.cmd.Command;
+
 public class Dispatcher {
 	DefaultHttpClient mHttpClient;
 	MessageQueue mSndQueue;
@@ -56,14 +58,14 @@ public class Dispatcher {
 		HttpPost httpPost = new HttpPost( Profile.HOST );
 		List<NameValuePair> params = new ArrayList<NameValuePair>();  
 		try {
-			BasicNameValuePair bnvp = new BasicNameValuePair("args", msg.toStr());
+			BasicNameValuePair bnvp = new BasicNameValuePair("args", msg.cmd.toStr());
 			params.add(bnvp);
 			httpPost.setEntity(new UrlEncodedFormEntity(params, "UTF-8"));
 			HttpResponse httpResponse = mHttpClient.execute(httpPost);
 			int code = httpResponse.getStatusLine().getStatusCode();  
 			if( code > 199 && code < 400 ) {
 				String result = EntityUtils.toString(httpResponse.getEntity());
-				msg.onResponse( new Data(result) );
+				msg.onResponse( Command.Ack.fromStr(result) );
 			}else {
 				msg.onFailed( Log.Error.ERR_NETWORK );
 			}
@@ -89,5 +91,14 @@ public class Dispatcher {
 	
 	public void receive( Message msg ) throws Exception {
 		mRcvQueue.enqueue(msg);
+	}
+	
+	public void inject( Message msg ) {
+		try {
+			mSndQueue.enqueue(msg);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 }

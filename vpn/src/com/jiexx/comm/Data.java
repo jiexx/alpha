@@ -1,5 +1,6 @@
 package com.jiexx.comm;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -13,137 +14,77 @@ import org.json.JSONObject;
 import org.json.JSONStringer;
 import org.json.JSONTokener;
 
+import com.jiexx.cmd.Command;
 
 
-public class Data<T> {
-	public enum Type {
-		String, Integer, Array, Data;
-		public static Type check( Object o ) {
-			if( o instanceof String )
-				return Type.String;
-			else if( o instanceof Integer )
-				return Type.Integer;
-			else if( o instanceof List<?> )
-				return Type.Array;
-			else if( o instanceof Data )
-				return Type.Data;
-			return null;
-		}
-		public static void toJSON( JSONStringer json, String name, Value v ) {
-			try {
-				json.object();
-				if( v.type() == Type.String || v.type() == Type.Integer ) {
-					json.key(name);
-					json.value(v.obj());
-				}else if ( v.type() == Type.Data ) {
-					toJSON( json, name, v );
-				}else if ( v.type() == Type.Array ) {
-					List<Value> list = (List<Value>) v.obj();
-					for( int i = 0 ; i < list.size() ; i ++ ) {
-						toJSON( json, name, list.get(i) );
+
+public class Data {
+
+	private final static void serialize( JSONStringer js, Object obj ) {
+		try {
+			Class<?> c = obj.getClass();
+			Class<?> clazz;
+			for( Field field : c.getDeclaredFields() ) {
+				clazz = field.getClass();
+				if( isConstMatched( clazz ) ) {
+					js.key(field.getName());
+					js.value(field.get(obj));	
+				} else if ( isObjectMatched( c ) ) {
+					js.key(field.getName());
+					js.object();
+					serialize(js,field.get(obj));
+					js.endObject();
+				} else if ( isArrayMatched( c ) ) {
+					js.key(field.getName());
+					js.array();
+					for( int i = 0; i < Array.getLength(obj) ; i ++ ) {
+						serialize( js,Array.get(field.get(obj), i) );
 					}
-				}
-				json.endObject();
-			} catch (JSONException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-	};
-	private class Value {
-		private Type mTyp;
-		private Object mObj;
-		public Value(Type t, Object o) {
-			// TODO Auto-generated constructor stub
-			mTyp = t;
-			mObj = o;
-		}
-		public Object obj() {
-			return mObj;
-		}
-		public Type type() {
-			return mTyp;
-		}
-		public void set(Object o) {
-			mObj = o;
-		}
-	}
-	private Class<T> mCache;
-	public void define( String def ) {
-		
-	}
-	private void construct( String k, Data d, JSONObject jobj ) {
-		try {
-			Iterator<String> keys = jobj.keys();  
-			String key;
-			Object obj;
-			Value v;
-			while(keys.hasNext()){  
-				key = keys.next();
-				obj = jobj.get(key);
-				if( obj instanceof String || obj instanceof Integer ) {
-					d.put( key, obj );
-				}else if( obj instanceof JSONObject ) {
-					v = d.add(Type.Data, k);
-					construct( key, (Data)v.obj(), (JSONObject)obj );
+					js.endArray();
 				}
 			}
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} 
-	}
-	public Data( String des ) {
-		try {
-			JSONTokener json = new JSONTokener( Utils.decodeDES(des.getBytes()) );
-			JSONObject jobj = (JSONObject) json.nextValue();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
-	public Data( Class<T> d ) {
-		mCache = d;
-	}
-	
-	public Value add( Type t, String name ) {
-		return mCache.put(name, new Value(t, null));
-	}
-	public Type getType( String name ){
-		return mCache.get(name).type();
-	}
-	public void put( String name, Object value ) throws Exception {
-		if( Type.check(value) == getType(name) ) {
-			mCache.get(name).set(value);
-		}else {
-			throw new Exception(Log.Error.ERR_DATA_TYPE);
+	public String serialize() {
+		try {
+			JSONStringer js = new JSONStringer();
+			serialize( js, mShadow );
+			return js.toString();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
+		return null;
 	}
-	public String getStr( String name ) {
-		return (String) mCache.get(name).obj();
+	public Data() {
+		mShadow = null;
 	}
-	public Integer getInt( String name ) {
-		return (Integer) mCache.get(name).obj();
+	public Data( Command t ) {
+		mShadow = t;
 	}
-	public List<Data> getArray( String name ) {
-		return (List<Data>) mCache.get(name).obj();
-	}
-	public Data getData( String name ) {
-		return (Data) mCache.get(name).obj();
-	}
-	public String getBase64Str() throws Exception {
-		JSONStringer json = new JSONStringer();
-		
-		Iterator iter = mCache.entrySet().iterator();
-		while (iter.hasNext()) {
-			HashMap.Entry entry = (HashMap.Entry) iter.next();
-			Type.toJSON(json, (String)entry.getKey(), (Value)entry.getKey() );
+	private Command mShadow;
+	private static boolean isConstMatched( Class<?> t ) {
+		if( Integer.class.isAssignableFrom(t) 
+		||  String.class.isAssignableFrom(t)
+		||  Float.class.isAssignableFrom(t) ){
+			return true;
 		}
-		
-		return Utils.encodeDES( json.toString() );
+		return false;
+	}
+	private final static boolean isObjectMatched( Class<?> t ) {
+		if( t.isMemberClass() || t.isLocalClass() ) {
+			return true;
+		}
+		return false;
+	}
+	private final static boolean isArrayMatched( Class<?> t ) {
+		if( t.isArray() ) {
+			return true;
+		}
+		return false;
 	}
 	private static boolean isConstMatched( Class<?> t, Object o ) {
 		if( o instanceof Integer && Integer.class.isAssignableFrom(t) 
@@ -154,7 +95,7 @@ public class Data<T> {
 		return false;
 	}
 	private final static boolean isObjectMatched( Class<?> t, Object o ) {
-		if( o instanceof JSONObject && t.isMemberClass() ) {
+		if( o instanceof JSONObject && ( t.isMemberClass() || t.isLocalClass() ) ) {
 			return true;
 		}
 		return false;
@@ -165,28 +106,17 @@ public class Data<T> {
 		}
 		return false;
 	}
-	public <T> T unserialize( Class<T> clazz, JSONObject jobj ) {
+	private final static Object[] extractArrFields( Class<?> clazz, JSONArray jobj ) {
 		try {
-			if ( mCache == null )
-				return null;
-			//T obj = (T) mCache.newInstance();
-			if( List.class.isAssignableFrom(mCache) ) {
-				
-			}else {
-				Iterator<String> key = jobj.keys();
-				while(  key.hasNext() ) {
-					String name = key.next();
-					Object value = jobj.get( name );
-					Field fld = mCache.getDeclaredField(name);
-					Class<?> typ = fld.getType();
-					if( isConstMatched( typ, value ) ) {
-						Constructor<?> c = typ.getConstructor(typ);
-						Object o = c.newInstance(value);
-						fld.set(obj, o);
-					}else if( isObjectMatched( typ, value ) ) {
-						unserialize( (JSONObject)value );
-					}
+			
+			Constructor<?>[] ca = clazz.getConstructors();
+			if ( ca.length == jobj.length() )  {
+				Object[] obj = (Object[]) Array.newInstance(clazz, ca.length);
+				for( int i = 0 ; i < ca.length ; i ++ ) {
+					Object o = extractComFields( ca.getClass(), jobj.getJSONObject(i) );
+					obj[i] = o;
 				}
+				return obj;
 			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -194,7 +124,55 @@ public class Data<T> {
 		}
 		return null;
 	}
-	private static void setField(Object obj, Method fieldSetMethod,Field f, JSONObject jo) { 
-		
+	private final static Object extractComFields( Class<?> clazz, JSONObject jobj ) {
+		try {
+			Object obj = clazz.newInstance();
+			if ( obj == null )
+				return null;
+			Iterator<String> key = jobj.keys();
+			String name;
+			Object value, o;
+			Field field;
+			Class<?> type;
+			Constructor<?> c;
+			while(  key.hasNext() ) {
+				name = key.next();
+				value = jobj.get( name );
+				field = clazz.getDeclaredField(name);
+				field.setAccessible(true);
+				type = field.getType();
+				if( isConstMatched( type, value ) ) {
+					c = type.getConstructor(type);
+					o = c.newInstance(value);
+					field.set(obj, o);
+				}else if( isObjectMatched( type, value ) ) {
+					o = extractComFields( type, (JSONObject)value );
+					field.set(obj, o);
+				}else if( isArrayMatched( type, value ) ) {
+					o = extractArrFields( type, (JSONArray)value );
+					field.set(obj, o);
+				}
+			}
+			return obj;
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
+	public Object unserialize( Class<?> clazz, JSONObject jobj ) {
+		return extractComFields( clazz, jobj );		
+	}
+	public void unserialize( String json ) {
+		try {
+			JSONTokener parser = new JSONTokener( json );
+			mShadow = (Command) unserialize( mShadow.getClass(), (JSONObject)parser.nextValue() );  
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	public Command get() {
+		return mShadow;
 	}
 }
