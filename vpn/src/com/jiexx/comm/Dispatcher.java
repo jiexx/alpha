@@ -28,6 +28,7 @@ public class Dispatcher {
 	DefaultHttpClient mHttpClient;
 	MessageQueue mSndQueue;
 	MessageQueue mRcvQueue;
+	Thread mT1, mT2;
 	static Dispatcher mThis;
 	
 	public Dispatcher() {
@@ -46,7 +47,11 @@ public class Dispatcher {
 		}
         
         mSndQueue = new MessageQueue( this );
-        mRcvQueue = new MessageQueue( this );
+        mRcvQueue = new RcvQueue( this );
+        mT1 = new Thread(mSndQueue );
+        mT2 = new Thread(mRcvQueue );
+        mT1.start();
+        mT2.start();
         mThis = this;
 	}
 	
