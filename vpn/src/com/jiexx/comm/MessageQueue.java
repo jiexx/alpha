@@ -5,8 +5,8 @@ import java.util.List;
 
 public class MessageQueue implements Runnable {
 	private static final int QUEUE_MAX_SIZE = 20;
-	private List<Message> mQueue = new ArrayList<Message>();
-	private Dispatcher mDispatcher;
+	protected List<Message> mQueue = new ArrayList<Message>();
+	protected Dispatcher mDispatcher;
 	public MessageQueue( Dispatcher d ) {
 		mDispatcher = d;
 	}

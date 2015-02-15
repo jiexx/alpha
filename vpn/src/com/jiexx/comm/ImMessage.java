@@ -1,18 +1,14 @@
 package com.jiexx.comm;
 
+import com.jiexx.cmd.Command;
+import com.jiexx.cmd.iMessage;
+
 public class ImMessage implements Message {
-	private Data mData;
-	
-	public ImMessage( Data d ) {
-		mData = d;
-	}
-	
-	public Data getData() {
-		return mData;
-	}
-	
-	public String toStr() throws Exception {
-		return mData.getBase64Str();
+	public long CreateTime;
+	public long ReceiveTime;
+	public String str;
+	public ImMessage( Command d ) {
+		CreateTime = System.currentTimeMillis();
 	}
 	
 	public void onResponse( Data d ){
@@ -22,11 +18,27 @@ public class ImMessage implements Message {
 	@Override
 	public void onRequest(Dispatcher d) {
 		// TODO Auto-generated method stub
-		d.send(this);
+		d.receive(this);
 	}
 
 	@Override
 	public void onFailed(String info) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	public void onReceive( Data d ){
+		
+	}
+
+	@Override
+	public void onResponse(Dispatcher d) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onData(Data d) {
 		// TODO Auto-generated method stub
 		
 	}

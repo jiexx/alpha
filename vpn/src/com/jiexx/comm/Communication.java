@@ -9,14 +9,16 @@ public class Communication {
 			super(d);
 			// TODO Auto-generated constructor stub
 		}
-		public void onResponse( Data d ){
+		public void onData( Data d ){
 			onHttpMessage(d);
 		}
 		
 	}
 	public void postMessage( Command cmd ) {
 		ComHttpMessage chm = new ComHttpMessage(cmd);
-		Dispatcher.self().inject(chm);
+		Dispatcher.self().emit(chm);
+	}
+	public void onHttpMessage( Data d ) {
 	}
 	public void postImMessage( String who, String msg ) {
 		

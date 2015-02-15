@@ -62,14 +62,10 @@ public class Dispatcher {
 			params.add(bnvp);
 			httpPost.setEntity(new UrlEncodedFormEntity(params, "UTF-8"));
 			HttpResponse httpResponse = mHttpClient.execute(httpPost);
-			int code = httpResponse.getStatusLine().getStatusCode();  
-			if( code > 199 && code < 400 ) {
-				String result = EntityUtils.toString(httpResponse.getEntity());
-				msg.onResponse( Command.Ack.fromStr(result) );
-			}else {
-				msg.onFailed( Log.Error.ERR_NETWORK );
-			}
+			msg.code = httpResponse.getStatusLine().getStatusCode(); 
+			msg.result = EntityUtils.toString(httpResponse.getEntity());
 			mSndQueue.dequeue();
+			mRcvQueue.enqueue(msg);
 		} catch (UnsupportedEncodingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -84,16 +80,40 @@ public class Dispatcher {
 			e.printStackTrace();
 		} 
 	}
-	
-	public void send( ImMessage msg ){
-		msg.onResponse( msg.getData() );
+	public void receive( HttpMessage msg ) {
+		try {
+			if( msg.code > 199 && msg.code < 400 ) {
+				msg.onData( Command.ACK.fromStr(msg.result) );
+			}else {
+				msg.onFailed( Log.Error.ERR_NETWORK );
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
-	public void receive( Message msg ) throws Exception {
-		mRcvQueue.enqueue(msg);
+	public void send( ImMessage msg ) {
 	}
 	
-	public void inject( Message msg ) {
+	public void receive( ImMessage msg ) {
+		try {
+			msg.onResponse(Command.STR.fromStr(msg.str));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public void accpet( Message msg ) {
+		try {
+			mRcvQueue.enqueue(msg);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	public void emit( Message msg ) {
 		try {
 			mSndQueue.enqueue(msg);
 		} catch (Exception e) {
