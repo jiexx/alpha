@@ -127,8 +127,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	ShowWindow(hWnd, nCmdShow);
 	UpdateWindow(hWnd);
 
-	BOOL bRes  = RegisterHotKey(hWnd,ID_PAI,MOD_CONTROL | MOD_ALT,VK_NUMPAD0);// ctrl+alt+0(小键盘的0) 
-	bRes  = RegisterHotKey(hWnd,ID_QUIT,MOD_CONTROL,' '); //ctrl+alt+1(小键盘的1) 
+	BOOL bRes  = RegisterHotKey(hWnd, ID_PAI, MOD_CONTROL, ' ');// ctrl+alt+0(小键盘的0) 
+	bRes  = RegisterHotKey(hWnd, ID_QUIT, MOD_CONTROL, '1'); //ctrl+alt+1(小键盘的1) 
 	return TRUE;
 }
 
@@ -165,6 +165,30 @@ LRESULT CALLBACK QuitWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 
 LRESULT CALLBACK PaiWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	HWND h = FindWindow(L"TImageForm", L"额度投标网络客户端");
+	if ( h ) {
+		RECT r;
+		GetWindowRect(h, &r);
+		SwitchToThisWindow(h, TRUE);
+		utils::mouseClick(r.left+160, r.top+250);
+		return 0;
+	}
+	h = FindWindow(L"TErrorBoxForm", L"额度投标网络客户端");
+	if( h ) {
+		RECT r;
+		GetWindowRect(h, &r);
+		SwitchToThisWindow(h, TRUE);
+		utils::mouseClick(r.left+250, r.top+250);
+		return 0;
+	}
+	h = FindWindow(L"TMainForm", NULL);
+	if( h ) {
+		RECT r;
+		GetWindowRect(h, &r);
+		SwitchToThisWindow(h, TRUE);
+		utils::mouseClick(r.left+580, r.top+440);
+		return 0;
+	}
 	return 0;
 }
 //

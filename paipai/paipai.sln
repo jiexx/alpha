@@ -3,6 +3,10 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "paipai", "paipai\paipai.vcxproj", "{D524423A-80B9-420C-BAEF-2DD5661713D3}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tool", "tool\tool.vcxproj", "{039C86F7-7B50-40C6-B9F2-4D2AF96EE687}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "recognize", "recognize\recognize.vcxproj", "{40519E5E-F9B9-4786-A3FC-FB61A3491150}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -13,6 +17,14 @@ Global
 		{D524423A-80B9-420C-BAEF-2DD5661713D3}.Debug|Win32.Build.0 = Debug|Win32
 		{D524423A-80B9-420C-BAEF-2DD5661713D3}.Release|Win32.ActiveCfg = Release|Win32
 		{D524423A-80B9-420C-BAEF-2DD5661713D3}.Release|Win32.Build.0 = Release|Win32
+		{039C86F7-7B50-40C6-B9F2-4D2AF96EE687}.Debug|Win32.ActiveCfg = Debug|Win32
+		{039C86F7-7B50-40C6-B9F2-4D2AF96EE687}.Debug|Win32.Build.0 = Debug|Win32
+		{039C86F7-7B50-40C6-B9F2-4D2AF96EE687}.Release|Win32.ActiveCfg = Release|Win32
+		{039C86F7-7B50-40C6-B9F2-4D2AF96EE687}.Release|Win32.Build.0 = Release|Win32
+		{40519E5E-F9B9-4786-A3FC-FB61A3491150}.Debug|Win32.ActiveCfg = Debug|Win32
+		{40519E5E-F9B9-4786-A3FC-FB61A3491150}.Debug|Win32.Build.0 = Debug|Win32
+		{40519E5E-F9B9-4786-A3FC-FB61A3491150}.Release|Win32.ActiveCfg = Release|Win32
+		{40519E5E-F9B9-4786-A3FC-FB61A3491150}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
