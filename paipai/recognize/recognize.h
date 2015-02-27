@@ -1,18 +1,28 @@
 // recognize.h
 
 #pragma once
-#include "opencv\cv.h"
-#include "opencv\opencv2\ml\ml.hpp"
+#include "cv.h"
+#include "highgui.h"
+#include "ml/ml.hpp"
 
-using namespace System;
 using namespace cv;
 
-namespace recognize {
-
-	public ref class R
-	{
-		// TODO: 在此处添加此类的方法。
-		public CvKNearest generate( const char[][] images );
-
-	};
-}
+class recognize
+{
+public:
+	recognize();
+	~recognize();
+	void load( const char** imageslist, int size );
+	IplImage* preprocessing(IplImage* src);
+	void prepare();
+	int classify(IplImage* img);
+protected:
+	CvKNearest* mKNN;
+	CvMat* mTrainClasses;
+	CvMat* mTrainData;
+	int mNormSize;
+	int mNumOfCls;
+	int mNumOfSamples;
+	IplImage** mArrImg;
+	const int K=10;
+};
