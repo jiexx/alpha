@@ -13,12 +13,13 @@ recognize::recognize(){
 	mTrainClasses = cvCreateMat( mNumOfSamples*mNumOfCls, 1, CV_32FC1 );
 }
 recognize::~recognize(){
-	if( mArrImg )
+	if( mArrImg ) {
 		delete[] mArrImg;
+	}
 	if( mKNN )
 		delete mKNN;
 }
-void recognize::load( const char** imageslist, int size ){
+void recognize::load( const char imageslist[][8], int size ){
 	if( size != mNumOfCls*mNumOfSamples ) 
 		return;
 	mArrImg = (IplImage**)new IplImage[mNumOfCls*mNumOfSamples];
@@ -53,12 +54,12 @@ void recognize::prepare(){
 		}
 	}
 	mKNN = new CvKNearest( mTrainData, mTrainClasses, 0, false, K );
-	if( mKNN ) {
-		mKNN->save();
-	}
+	//if( mKNN ) {
+	//	mKNN->save();
+	//}
 }
 int recognize::classify(IplImage* img){
-	CvMat cls, dat;
+	CvMat dat;
 	IplImage* p;
 	CvMat* nearest=cvCreateMat(1,K,CV_32FC1);
 
@@ -70,4 +71,148 @@ int recognize::classify(IplImage* img){
 
 	float result = mKNN->find_nearest(row1,K,0,0,nearest,0);
 	return (int) result;
+}
+
+bool recognize::sortx(const Piece &v1, const Piece &v2){
+	return v1.x < v2.x;
+}
+
+IplImage* bmp2ipl(BITMAPINFO* bi, BYTE* data) {
+	int channal=(bi->bmiHeader.biBitCount == 1) ? 1:(bi->bmiHeader.biBitCount/8);
+	//仅限于二值图像和灰度图像
+	//int depth  =(pbmpinfo->bmiHeader.biBitCount == 1) ? IPL_DEPTH_1U : IPL_DEPTH_8U;
+	int depth  =  IPL_DEPTH_8U;
+
+	int width=bi->bmiHeader.biWidth;
+	int heigh=bi->bmiHeader.biHeight;
+
+	IplImage *pmg;
+
+	pmg=cvCreateImageHeader(cvSize(width,heigh),depth,channal);
+	pmg->imageData=(char*)malloc(pmg->imageSize);
+	pmg->origin=1;
+	//cvSetData();
+	memcpy(pmg->imageData, data, pmg->imageSize);
+
+	return pmg;
+}
+
+IplImage* capture(HWND hWnd) {  
+
+	RECT rect;  
+	GetWindowRect(hWnd, &rect);  
+  
+	int nWidht = rect.right - rect.left;  
+	int nHeight = rect.bottom - rect.top;  
+  
+	HDC hDC = GetWindowDC(hWnd);  
+	HDC hComatibleDC = CreateCompatibleDC(hDC);    
+	HBITMAP hBMP = CreateCompatibleBitmap(hDC, nWidht, nHeight);  
+	HBITMAP hOldBMP = (HBITMAP)SelectObject(hComatibleDC, hBMP);  
+	BitBlt(hComatibleDC, 0, 0, nWidht, nHeight, hDC, 0, 0, SRCCOPY);  
+  
+	BITMAP bitmap = {0};  
+	GetObject(hBMP, sizeof(BITMAP), &bitmap);  
+	BITMAPINFOHEADER bi = {0};  
+	BITMAPFILEHEADER bf = {0};  
+      
+	CONST int nBitCount = 24;  
+	bi.biSize = sizeof(BITMAPINFOHEADER);  
+	bi.biWidth = bitmap.bmWidth;  
+	bi.biHeight = bitmap.bmHeight;  
+	bi.biPlanes = 1;  
+	bi.biBitCount = nBitCount;  
+	bi.biCompression = BI_RGB;  
+	DWORD dwSize = ((bitmap.bmWidth * nBitCount + 31) / 32) * 4 * bitmap.bmHeight;  
+  
+	HANDLE hDib = GlobalAlloc(GHND, dwSize + sizeof(BITMAPINFOHEADER));  
+	LPBITMAPINFOHEADER lpbi = (LPBITMAPINFOHEADER)GlobalLock(hDib);  
+	*lpbi = bi;  
+  
+	GetDIBits(hComatibleDC, hBMP, 0, bitmap.bmHeight, (BYTE*)lpbi + sizeof(BITMAPINFOHEADER), (BITMAPINFO*)lpbi, DIB_RGB_COLORS);  
+   
+	//bf.bfType = 0x4d42;  
+	//dwSize += sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);  
+	//bf.bfSize = dwSize;  
+	//bf.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);  
+  
+	//file.Write((BYTE*)&bf, sizeof(BITMAPFILEHEADER));  
+	//file.Write((BYTE*)lpbi, dwSize);  
+	IplImage* result = bmp2ipl((BITMAPINFO*)lpbi, (BYTE*)lpbi + sizeof(BITMAPINFOHEADER));
+      
+	GlobalUnlock(hDib);  
+	GlobalFree(hDib);  
+      
+	SelectObject(hComatibleDC, hOldBMP);  
+	DeleteObject(hBMP);  
+	DeleteDC(hComatibleDC);  
+	ReleaseDC(hWnd, hDC);  
+  
+	return result;  
+} 
+
+IplImage* focus(HWND hWnd, const CvRect& rect) {
+	IplImage* ipli = capture(hWnd);
+	CvMat* mat = cvGetSubRect(ipli, cvCreateMatHeader(rect.height, rect.width, CV_8UC1), rect);
+	IplImage *header = cvCreateImageHeader(cvSize(rect.width, rect.height), ipli->depth, ipli->nChannels);
+	return cvGetImage(mat, header);
+}
+
+vector<Piece> recognize::identify(IplImage* img) {
+	vector<Piece> result;
+
+	Mat input(img, 0), gray, binary, erosion, element;
+	cvtColor(input, gray, CV_BGR2GRAY); 
+
+	threshold(gray, binary, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);/*binary image*/
+
+	element = getStructuringElement(MORPH_ELLIPSE/*erosion_type*/, Size(2*0/*erosion_size*/+1, 2*0/*erosion_size*/+1)); 
+	erode(binary, erosion, element);  
+
+	/////////split////////
+	vector< vector< Point> > contours;    
+	findContours(erosion, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);   
+
+
+	vector<Rect> boundRect(contours.size());    
+	for (unsigned int i = 0; i < contours.size(); ++i) {    
+		Scalar color = Scalar(0, 0, 0);/*bb outline*/    
+		boundRect[i] = boundingRect(Mat(contours[i]));    
+		rectangle(erosion, boundRect[i].tl(), boundRect[i].br(), color, 0.2, 8, 0);    
+        
+		CvRect roi = CvRect(boundRect[i]);    
+		IplImage orig = erosion;    
+		IplImage *src = cvCreateImage(cvSize(roi.width, roi.height), orig.depth, orig.nChannels);    
+		cvSetImageROI(&orig, roi);    
+		cvCopy(&orig, src);    
+		cvResetImageROI(&orig);    
+    
+		IplImage *one, *two;    
+		one = cvCreateImage(cvSize(mNormSize, mNormSize), IPL_DEPTH_8U, 1);    
+		cvResize(src, one);    
+		cvThreshold(one, two, 100, 255, CV_THRESH_BINARY_INV);            
+    
+		int ret = classify(two);       
+		result.push_back( Piece(boundRect[i].tl().x,ret) );
+	}
+
+	////////sort////////////
+	sort( result.begin(), result.end(), sortx );
+	return result;
+}
+
+vector<Piece> recognize::test(const char* file) {
+	IplImage* ipl = cvLoadImage(file, 0);
+	return identify(ipl);
+}
+
+const char* recognize::characterize(HWND hWnd, const CvRect& rect) {
+	memset(mResult, 0, RESULT_SIZE);
+	IplImage* ipl = focus(hWnd, rect);
+	vector<Piece> list = identify(ipl);
+	for(unsigned int i = 0; i < list.size(); i ++ ) {
+		Piece r = list.at(i);
+		mResult[i] = r.c;
+	}
+	return mResult;
 }
