@@ -21,7 +21,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	};
 	reco.load(imglist,10);
 	reco.prepare();
-	const char f[8] = {"3.png"};
+	const char f[18] = {"test.png"};
 	reco.test( f );
 	return 0;
 }

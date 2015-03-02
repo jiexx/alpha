@@ -30,7 +30,10 @@ void recognize::load( const char imageslist[][8], int size ){
 	}
 }
 IplImage* recognize::preprocessing(IplImage* src){
-	return src;
+	IplImage* img = cvCreateImage( cvSize( mNormSize, mNormSize ), IPL_DEPTH_32F, 1 );
+	//convert 8 bits image to 32 float image
+	cvConvertScale(src, img, 1, 0);
+	return img;
 }
 void recognize::prepare(){
 	CvMat cls, dat;
@@ -45,7 +48,10 @@ void recognize::prepare(){
 
 			// Set data
 			cvGetRow( mTrainData, &cls, i*mNumOfSamples + j);
+			//IplImage* ipl = cvCreateImage( cvSize( mNormSize, mNormSize ), IPL_DEPTH_32F, 1 );
+			//cvConvertScale(img, ipl, 1, 0);
 			cvGetSubRect( img, &dat, cvRect(0,0,mNormSize,mNormSize) );
+			
 
 			CvMat row_header, *row1;
 			row1 = cvReshape( &dat, &row_header, 0, 1 );
@@ -161,13 +167,19 @@ IplImage* focus(HWND hWnd, const CvRect& rect) {
 vector<Piece> recognize::identify(IplImage* img) {
 	vector<Piece> result;
 
+	//cvSmooth(img,img,CV_GAUSSIAN,3,0,0,0);
+	//cvThreshold(img, img, 0, 255, CV_THRESH_BINARY);  
+	//imwrite( "Smooth.jpg", Mat(img,0) ); 
+
 	Mat input(img, 0), gray, binary, erosion, element;
 	cvtColor(input, gray, CV_BGR2GRAY); 
 
-	threshold(gray, binary, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);/*binary image*/
+	threshold(gray, binary, 0, 255, CV_THRESH_BINARY_INV | CV_THRESH_OTSU);/*binary image*/
 
-	element = getStructuringElement(MORPH_ELLIPSE/*erosion_type*/, Size(2*0/*erosion_size*/+1, 2*0/*erosion_size*/+1)); 
-	erode(binary, erosion, element);  
+	element = getStructuringElement(MORPH_RECT/*erosion_type*/, Size(2,2), Point( -1, -1 )/*Size(-2*1erosion_size+1, -2*1erosion_size+1)*/); 
+	/*dilate*/erode(binary, erosion, element);  
+
+	imwrite( "erode.jpg", erosion ); 
 
 	/////////split////////
 	vector< vector< Point> > contours;    
@@ -176,9 +188,9 @@ vector<Piece> recognize::identify(IplImage* img) {
 
 	vector<Rect> boundRect(contours.size());    
 	for (unsigned int i = 0; i < contours.size(); ++i) {    
-		Scalar color = Scalar(0, 0, 0);/*bb outline*/    
+		//Scalar color = Scalar(0, 0, 0);/*bb outline*/    
 		boundRect[i] = boundingRect(Mat(contours[i]));    
-		rectangle(erosion, boundRect[i].tl(), boundRect[i].br(), color, 0.2, 8, 0);    
+		//rectangle(erosion, boundRect[i].tl(), boundRect[i].br(), color, 0.2, 8, 0);    
         
 		CvRect roi = CvRect(boundRect[i]);    
 		IplImage orig = erosion;    
@@ -186,13 +198,17 @@ vector<Piece> recognize::identify(IplImage* img) {
 		cvSetImageROI(&orig, roi);    
 		cvCopy(&orig, src);    
 		cvResetImageROI(&orig);    
+
+		imwrite( "roi.jpg", Mat(src,0) ); 
     
-		IplImage *one, *two;    
+		IplImage *one;    
 		one = cvCreateImage(cvSize(mNormSize, mNormSize), IPL_DEPTH_8U, 1);    
 		cvResize(src, one);    
-		cvThreshold(one, two, 100, 255, CV_THRESH_BINARY_INV);            
+		cvThreshold(one, one, 0, 255, CV_THRESH_BINARY);  
+
+		imwrite( "Threshold.jpg", Mat(one,0) ); 
     
-		int ret = classify(two);       
+		int ret = classify(one);       
 		result.push_back( Piece(boundRect[i].tl().x,ret) );
 	}
 
@@ -202,8 +218,11 @@ vector<Piece> recognize::identify(IplImage* img) {
 }
 
 vector<Piece> recognize::test(const char* file) {
-	IplImage* ipl = cvLoadImage(file, 0);
-	return identify(ipl);
+	Mat img = imread(file);
+	Mat dst;
+	img.convertTo(dst, CV_8UC1);
+	IplImage ipl = IplImage(dst); 
+	return identify(&ipl);
 }
 
 const char* recognize::characterize(HWND hWnd, const CvRect& rect) {
