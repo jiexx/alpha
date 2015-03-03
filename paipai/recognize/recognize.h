@@ -35,7 +35,7 @@ protected:
 	int mNumOfCls;
 	int mNumOfSamples;
 	IplImage** mArrImg;
-	const static int K = 10;
+	int K;
 #define RESULT_SIZE 16
 	char mResult[RESULT_SIZE];
 };
