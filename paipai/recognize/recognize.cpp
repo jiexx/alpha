@@ -213,6 +213,57 @@ int filterChanales( const Mat& input, Mat& output, int bgr, vector<vector<Point>
 	return 0;
 }
 
+int filterErode( const Mat& input, Mat& output,  vector<vector<Point>>& contours ) {
+	Mat gray, binary, erosion, dilation, mer, sub, guss, e1, e2;
+	e1 = getStructuringElement(MORPH_RECT, Size(2,2), Point(-1,-1) ); 
+	e2 = getStructuringElement(MORPH_RECT, Size(3,3), Point(1,1) );
+
+	cvtColor(input, gray, CV_BGR2GRAY); 
+	threshold(gray, binary, 0, 255, CV_THRESH_BINARY_INV | CV_THRESH_OTSU);
+	imwrite( "binary.jpg", binary ); 
+
+	erode(binary, erosion, e1);
+	dilate(erosion, dilation, e2, Point(1,1), 1);
+	imwrite( "dilation1.jpg", dilation ); 
+	
+	sub = binary - dilation;
+	imwrite( "sub.jpg", sub ); 
+
+	//GaussianBlur(sub, guss, Size(3, 3), 0, 0); 
+	//medianBlur(sub, guss, 3);
+	guss = binary - sub;
+	imwrite( "guss.jpg", guss ); 
+
+	dilation.copyTo(output);
+	
+
+	findContours(dilation, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+	drawContours(dilation, contours, 0, Scalar(255, 0, 0), 1);
+	imwrite( "contours1.jpg", dilation ); 
+	drawContours(dilation, contours, 1, Scalar(255, 0, 0), 1);
+	imwrite( "contours2.jpg", dilation ); 
+	drawContours(dilation, contours, 2, Scalar(255, 0, 0), 1);
+	imwrite( "contours3.jpg", dilation ); 
+	drawContours(dilation, contours, 3, Scalar(255, 0, 0), 1);
+	imwrite( "contours4.jpg", dilation ); 
+	drawContours(dilation, contours, 4, Scalar(255, 0, 0), 1);
+	imwrite( "contours5.jpg", dilation );
+	drawContours(dilation, contours, 5, Scalar(255, 0, 0), 1);
+	imwrite( "contours6.jpg", dilation );
+	drawContours(dilation, contours, 6, Scalar(255, 0, 0), 1);
+	imwrite( "contours7.jpg", dilation );
+	drawContours(dilation, contours, 7, Scalar(255, 0, 0), 1);
+	imwrite( "contours8.jpg", dilation );
+	drawContours(dilation, contours, 8, Scalar(255, 0, 0), 1);
+	imwrite( "contours9.jpg", dilation );
+	//if( contours.size() == COUNT_DIGT ) {
+		return 1;
+	//}
+	contours.clear();
+	return 0;
+	
+}
+
 vector<Piece> recognize::identify(IplImage* img) {
 	vector<Piece> result;
 
@@ -252,9 +303,10 @@ vector<Piece> recognize::identify(IplImage* img) {
 	/////////split////////
 	Mat input(img, 0), output;
 	vector< vector< Point> > contours;
-	if( !filterChanales( input, output, 0, contours ) ) 
+	/*if( !filterChanales( input, output, 0, contours ) ) 
 		if( !filterChanales( input, output, 1, contours ) ) 
-			if( !filterChanales( input, output, 2, contours ) ) ;
+			if( !filterChanales( input, output, 2, contours ) ) ;*/
+	filterErode( input, output, contours );
 
 
 	vector<Rect> boundRect(contours.size());    
@@ -267,7 +319,8 @@ vector<Piece> recognize::identify(IplImage* img) {
 		IplImage orig = output; 
 		IplImage *src = cvCreateImage(cvSize(roi.width, roi.height), orig.depth, orig.nChannels);   
 		cvSetImageROI(&orig, roi);    
-		cvCopy(&orig, src);    
+		cvCopy(&orig, src);  
+		imwrite( "orig.jpg", output ); 
 		cvResetImageROI(&orig);    
 
 		imwrite( "roi.jpg", Mat(src,0) ); 
