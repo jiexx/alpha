@@ -30,10 +30,21 @@ void write( const char* f, vector<unsigned char>& v ) {
 	char str[8];
 	ofstream of(f, ios_base::binary|ios_base::app);
 	for ( vector<unsigned char>::iterator itr=v.begin(); itr!=v.end(); itr++ ) {
-		itoa( *itr, str, 16 );
+		memset(str, 0, 8);
+		sprintf(str, "%02x", *itr);
 		of << str;
 	}
 	of << '\n';
+}
+void read( const char* in, vector<unsigned char>& v ) {
+	int len = strlen(in);
+	unsigned int h, l;
+	for ( int i = 0; i < len; i ++ ) {
+		h = in[i] < 'a' ?  in[i]-'0' : in[i]-'a'+10;
+		i++;
+		l = in[i] < 'a' ?  in[i]-'0' : in[i]-'a'+10;
+		v.push_back( (h<<4)+l );
+	}
 }
 
 string i2a(int x) {
@@ -51,21 +62,33 @@ void recognize::load( const char imageslist[][8], int size, bool conv_save ){
 	for(int i = 0; i < mNumOfCls; i++){
 		for(int j = 0; j< mNumOfSamples; j++){
 			if( dat != NULL ) {
-				vector<char> data(dat[i*mNumOfSamples + j][457], size);
-				Mat image = imdecode(cv::Mat(data), 1);
-				mArrImg[i*mNumOfSamples + j] =  &IplImage(image);
-				return;
+				vector<unsigned char> data/*(str, str+strlen(str))*/;
+				read(dat[i*mNumOfSamples + j], data);
+				Mat image = imdecode(Mat(data), CV_LOAD_IMAGE_GRAYSCALE );
+				ofstream os(i2a(i)+i2a(j)+".png",ios_base::binary|ios_base::out);
+				image.copyTo(mArrImg[i*mNumOfSamples + j]);
+				for ( vector<unsigned char>::iterator itr=data.begin(); itr!=data.end(); itr++ ) {
+					os << *itr;
+				}
+				mArrImg[i*mNumOfSamples + j] =  new IplImage(image);
+				imwrite(i2a(i)+i2a(j)+".png",Mat());
 			} else {
 				mArrImg[i*mNumOfSamples + j] = cvLoadImage(imageslist[i*mNumOfSamples + j],0);
 				if( conv_save ) {
 					Mat src = Mat(mArrImg[i*mNumOfSamples + j],0);
 					vector<int> p;
-					p.push_back(CV_IMWRITE_PNG_COMPRESSION);
-					p.push_back(9);
-					p.push_back(0);
+					p.push_back(CV_IMWRITE_PNG_STRATEGY_DEFAULT);
+					p.push_back(0);//other value have problem issue. must be no compressed.
 					vector<unsigned char> buf;
-					imencode(".png", src, buf, p);
+					//imencode(".png", src, buf/*, p*/);
+					ifstream is(imageslist[i*mNumOfSamples + j],ios_base::binary|ios_base::in);
+					char c;
+					while( is.read(&c, 1) ) {
+						buf.push_back(c);
+					}
 					write( "result"/*(i2a(i) + i2a(j)).c_str()*/, buf);
+					//Mat image = imdecode(Mat(buf), 0);
+					//imwrite(i2a(i)+i2a(j)+".png",image);
 				}
 			}
 		}
