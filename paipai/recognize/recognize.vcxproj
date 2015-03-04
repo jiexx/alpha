@@ -81,6 +81,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="dat.h" />
     <ClInclude Include="recognize.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Stdafx.h" />

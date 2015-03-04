@@ -1,17 +1,20 @@
 // 这是主 DLL 文件。
 
 #include "stdafx.h"
-
+#include <fstream>
 #include "recognize.h"
+#include "dat.h"
 #define BORDER 1
-#define COUNT_DIGT 6
+#define DEF_WIDTH 14
+#define DEF_HEGITH 21
+#define MAX_GUARD 100000
 
 recognize::recognize(){
 	K = 1;
 	mNormSize = 32;
 	mKNN = NULL;
 	mNumOfCls = 10;
-	mNumOfSamples = 1;
+	mNumOfSamples = 2;
 	mTrainData = cvCreateMat( mNumOfSamples*mNumOfCls, mNormSize*mNormSize, CV_32FC1 );// rows, col, type
 	mTrainClasses = cvCreateMat( mNumOfSamples*mNumOfCls, 1, CV_32FC1 );
 }
@@ -22,22 +25,58 @@ recognize::~recognize(){
 	if( mKNN )
 		delete mKNN;
 }
-void recognize::load( const char imageslist[][8], int size ){
+
+void write( const char* f, vector<unsigned char>& v ) {
+	char str[8];
+	ofstream of(f, ios_base::binary|ios_base::app);
+	for ( vector<unsigned char>::iterator itr=v.begin(); itr!=v.end(); itr++ ) {
+		itoa( *itr, str, 16 );
+		of << str;
+	}
+	of << '\n';
+}
+
+string i2a(int x) {
+	std::ostringstream o;
+	if (o << x)
+		return o.str();
+	return "";
+}
+
+void recognize::load( const char imageslist[][8], int size, bool conv_save ){
 	if( size != mNumOfCls*mNumOfSamples ) 
 		return;
+	
 	mArrImg = (IplImage**)new IplImage[mNumOfCls*mNumOfSamples];
 	for(int i = 0; i < mNumOfCls; i++){
 		for(int j = 0; j< mNumOfSamples; j++){
-			mArrImg[i*mNumOfSamples + j] = cvLoadImage(imageslist[i*mNumOfSamples + j],0);
+			if( dat != NULL ) {
+				vector<char> data(dat[i*mNumOfSamples + j][457], size);
+				Mat image = imdecode(cv::Mat(data), 1);
+				mArrImg[i*mNumOfSamples + j] =  &IplImage(image);
+				return;
+			} else {
+				mArrImg[i*mNumOfSamples + j] = cvLoadImage(imageslist[i*mNumOfSamples + j],0);
+				if( conv_save ) {
+					Mat src = Mat(mArrImg[i*mNumOfSamples + j],0);
+					vector<int> p;
+					p.push_back(CV_IMWRITE_PNG_COMPRESSION);
+					p.push_back(9);
+					p.push_back(0);
+					vector<unsigned char> buf;
+					imencode(".png", src, buf, p);
+					write( "result"/*(i2a(i) + i2a(j)).c_str()*/, buf);
+				}
+			}
 		}
 	}
+
+	
 }
 IplImage* recognize::preprocessing(IplImage* src){
 	IplImage* img = cvCreateImage( cvSize( mNormSize, mNormSize ), IPL_DEPTH_32F, 1 );
 	//convert 8 bits image to 32 float image
 	cvConvertScale(src, img, 1, 0);
-	imwrite( "src.jpg", Mat(src) );
-	imwrite( "img.jpg", Mat(img) );
 	return img;
 }
 void recognize::prepare(){
@@ -191,7 +230,7 @@ IplImage* focus(HWND hWnd, const CvRect& rect) {
 //	return Mat(lines,0);
 //}
 
-int filterChanales( const Mat& input, Mat& output, int bgr, vector<vector<Point>>& contours ) {
+int filterChanales( const Mat& input, Mat& output, int bgr, vector<Rect>& bounds ) {
 	Mat ccc, gray, binary;
 	vector<Mat> bgra(input.channels());
 	split(input, bgra);
@@ -204,115 +243,136 @@ int filterChanales( const Mat& input, Mat& output, int bgr, vector<vector<Point>
 	threshold(gray, binary, 0, 255, CV_THRESH_BINARY_INV | CV_THRESH_OTSU);
 
 	binary.copyTo(output);
-   
+
+	vector<vector<Point>> contours;
 	findContours(binary, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
 	if( contours.size() == COUNT_DIGT ) {
+		for (unsigned int i = 0; i < contours.size(); ++i) {      
+			bounds.push_back( boundingRect(Mat(contours[i])) ); 
+		}
 		return 1;
 	}
-	contours.clear();
+	bounds.clear();
 	return 0;
 }
 
-int filterErode( const Mat& input, Mat& output,  vector<vector<Point>>& contours ) {
+Rect mergeRects( const vector<Rect>& rects ) {
+	unsigned int minx = 0, maxx = 0, miny = 0, maxy = 0;
+	for( unsigned int i = 0; i < rects.size(); ++i ) {
+		if( rects[minx].tl().x > rects[i].tl().x ) minx = i;
+		if( rects[maxx].br().x < rects[i].br().x ) maxx = i;
+		if( rects[miny].tl().y > rects[i].tl().y ) miny = i;
+		if( rects[maxy].br().y < rects[i].br().y ) maxy = i;
+	}
+	int x = rects[minx].tl().x;
+	int y = rects[miny].tl().y;
+	int width = rects[maxx].br().x - rects[minx].tl().x;
+	int height = rects[maxy].br().y - rects[miny].tl().y;
+	return Rect(x, y, width, height);
+}
+
+Rect mergeRects( const Rect& a, const Rect& b ) {
+	vector<Rect> r;
+	r.push_back(a);
+	r.push_back(b);
+	return mergeRects(r);
+}
+
+
+bool sort_rect(const Rect &v1, const Rect &v2){
+	return v1.x < v2.x;
+}
+
+int getBoundRect( vector<vector<Point>>& contours, vector<Rect>& output ) {
+	vector<Rect> boundRect;
+	for (unsigned int i = 0; i < contours.size(); ++i) {      
+		boundRect.push_back( boundingRect(Mat(contours[i])) ); 
+	}
+
+	if( boundRect.size() == COUNT_DIGT ) {
+		output = boundRect;
+		return 1;
+	}
+
+	sort( boundRect.begin(), boundRect.end(), sort_rect );
+
+	vector<Rect>& splits = output;
+	splits.push_back(boundRect[0]);
+	int last;
+	Rect merge_r;
+	for( unsigned int i = 0; i < boundRect.size(); ++i ) {
+		//try merge last one
+		last = splits.size()-1;
+		Rect r = mergeRects(splits[last], boundRect[i]);
+		if( r.width <= DEF_WIDTH ) {
+			splits[last] = r;
+		}else {
+			splits.push_back(boundRect[i]);
+		}
+	}
+
+	if( splits.size() == COUNT_DIGT ) {
+		return 1;
+	}
+	return 0;
+}
+int filterErode( const Mat& input, Mat& output,  vector<Rect>& bounds ) {
 	Mat gray, binary, erosion, dilation, mer, sub, guss, e1, e2;
 	e1 = getStructuringElement(MORPH_RECT, Size(2,2), Point(-1,-1) ); 
-	e2 = getStructuringElement(MORPH_RECT, Size(3,3), Point(1,1) );
+	e2 = getStructuringElement(MORPH_RECT, Size(2,2), Point(1,1) );
 
 	cvtColor(input, gray, CV_BGR2GRAY); 
 	threshold(gray, binary, 0, 255, CV_THRESH_BINARY_INV | CV_THRESH_OTSU);
 	imwrite( "binary.jpg", binary ); 
 
 	erode(binary, erosion, e1);
-	dilate(erosion, dilation, e2, Point(1,1), 1);
-	imwrite( "dilation1.jpg", dilation ); 
+	//dilate(erosion, dilation, e2, Point(1,1), 1);
+	imwrite( "dilation.jpg", erosion ); 
 	
-	sub = binary - dilation;
-	imwrite( "sub.jpg", sub ); 
+	//sub = binary - dilation;
+	//imwrite( "sub.jpg", sub ); 
 
 	//GaussianBlur(sub, guss, Size(3, 3), 0, 0); 
 	//medianBlur(sub, guss, 3);
-	guss = binary - sub;
-	imwrite( "guss.jpg", guss ); 
+	//guss = binary - sub;
+	//imwrite( "guss.jpg", guss ); 
 
-	dilation.copyTo(output);
+	erosion.copyTo(output);
 	
+	vector< vector< Point> > contours;
+	findContours(erosion, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+	//drawContours(dilation, contours, 0, Scalar(255, 0, 0), 1);
 
-	findContours(dilation, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
-	drawContours(dilation, contours, 0, Scalar(255, 0, 0), 1);
-	imwrite( "contours1.jpg", dilation ); 
-	drawContours(dilation, contours, 1, Scalar(255, 0, 0), 1);
-	imwrite( "contours2.jpg", dilation ); 
-	drawContours(dilation, contours, 2, Scalar(255, 0, 0), 1);
-	imwrite( "contours3.jpg", dilation ); 
-	drawContours(dilation, contours, 3, Scalar(255, 0, 0), 1);
-	imwrite( "contours4.jpg", dilation ); 
-	drawContours(dilation, contours, 4, Scalar(255, 0, 0), 1);
-	imwrite( "contours5.jpg", dilation );
-	drawContours(dilation, contours, 5, Scalar(255, 0, 0), 1);
-	imwrite( "contours6.jpg", dilation );
-	drawContours(dilation, contours, 6, Scalar(255, 0, 0), 1);
-	imwrite( "contours7.jpg", dilation );
-	drawContours(dilation, contours, 7, Scalar(255, 0, 0), 1);
-	imwrite( "contours8.jpg", dilation );
-	drawContours(dilation, contours, 8, Scalar(255, 0, 0), 1);
-	imwrite( "contours9.jpg", dilation );
-	//if( contours.size() == COUNT_DIGT ) {
+	if( getBoundRect(contours, bounds) ) {
+		for( unsigned int i = 0; i < bounds.size(); i ++ ) {
+			rectangle( erosion, bounds[i].tl(), bounds[i].br(), Scalar(255, 0, 0));
+		}
+		imwrite( "rectangle.jpg", erosion );
 		return 1;
-	//}
-	contours.clear();
+	}
+	for( unsigned int i = 0; i < bounds.size(); i ++ ) {
+		rectangle( erosion, bounds[i].tl(), bounds[i].br(), Scalar(255, 0, 0));
+	} 
+	imwrite( "rectangle.jpg", erosion ); 
+	bounds.clear();
 	return 0;
 	
 }
 
-vector<Piece> recognize::identify(IplImage* img) {
+const char* recognize::identify(IplImage* img) {
 	vector<Piece> result;
 
-	//cvSmooth(img,img,CV_GAUSSIAN,3,0,0,0);
-	//cvThreshold(img, img, 0, 255, CV_THRESH_BINARY);  
-	//imwrite( "Smooth.jpg", Mat(img,0) ); 
-	
-
-	//Mat input(img, 0), bbb, gray, binary, erosion, dilation, er, ec;
-	//vector<Mat> bgra(input.channels());
-	//split(input, bgra);
-	//bgra[0] = bgra[0];
-	//bgra[1] = bgra[0];
-	//bgra[2] = bgra[0];
-	//merge(bgra, bbb);
-	//imwrite( "bbb.jpg", bbb ); 
-	//cvtColor(bbb, gray, CV_BGR2GRAY); 
-	//imwrite( "gray.jpg", gray ); 
-	//threshold(gray, binary, 0, 255, CV_THRESH_BINARY_INV | CV_THRESH_OTSU);/*binary image*/
-	//imwrite( "binary.jpg", binary ); 
-	
-
-	//er = getStructuringElement(MORPH_RECT/*erosion_type*/, Size(2,2), Point(-1,-1) ); 
-	//erode(binary, erosion, er);
-	//close = pickoutLines(&IplImage(erosion));
-
-	//Size dsize = Size(erosion.cols*4,erosion.rows*4);
-	//resize(erosion, close, dsize, CV_INTER_LINEAR);
-	//dilate(erosion, dilation, ec, Point(-1,-1), 2);
-	////threshold(dilation,dilation,0,255,THRESH_BINARY_INV);
-	//dilation = close + erosion;
-
-	//imwrite( "dilation.jpg", dilation );
-	////markers = erosion + dilation;
-	//erode(dilation, erosion, er, Point(-1,-1), 4);
-	//imwrite( "dilation2.jpg", erosion );
 	/////////split////////
 	Mat input(img, 0), output;
-	vector< vector< Point> > contours;
+	vector<Rect> boundRect;
 	/*if( !filterChanales( input, output, 0, contours ) ) 
 		if( !filterChanales( input, output, 1, contours ) ) 
 			if( !filterChanales( input, output, 2, contours ) ) ;*/
-	filterErode( input, output, contours );
-
-
-	vector<Rect> boundRect(contours.size());    
-	for (unsigned int i = 0; i < contours.size(); ++i) {    
-		//Scalar color = Scalar(0, 0, 0);/*bb outline*/    
-		boundRect[i] = boundingRect(Mat(contours[i]));    
+	if( !filterErode( input, output, boundRect ) )
+		return NULL;
+	    
+	for (unsigned int i = 0; i < boundRect.size(); ++i) {    
+		//Scalar color = Scalar(0, 0, 0);/*bb outline*/      
 		//rectangle(erosion, boundRect[i].tl(), boundRect[i].br(), color, 0.2, 8, 0);    
 
 		CvRect roi = CvRect(boundRect[i]);    
@@ -335,13 +395,17 @@ vector<Piece> recognize::identify(IplImage* img) {
 		int ret = classify(one);       
 		result.push_back( Piece(boundRect[i].tl().x,ret) );
 	}
-
+	
 	////////sort////////////
 	sort( result.begin(), result.end(), sortx );
-	return result;
+	memset(mResult, 0, COUNT_DIGT+1);
+	for( int i = 0; i < COUNT_DIGT; i ++ ) {
+		mResult[i] = result[i].c + '0';
+	}
+	return mResult;
 }
 
-vector<Piece> recognize::test(const char* file) {
+const char* recognize::test(const char* file) {
 	//Mat img = imread(file);
 	//Mat dst;
 	//img.convertTo(dst, CV_8UC1);
@@ -357,12 +421,8 @@ vector<Piece> recognize::test(const char* file) {
 }
 
 const char* recognize::characterize(HWND hWnd, const CvRect& rect) {
-	memset(mResult, 0, RESULT_SIZE);
+	memset(mResult, 0, COUNT_DIGT+1);
 	IplImage* ipl = focus(hWnd, rect);
-	vector<Piece> list = identify(ipl);
-	for(unsigned int i = 0; i < list.size(); i ++ ) {
-		Piece r = list.at(i);
-		mResult[i] = r.c;
-	}
-	return mResult;
+
+	return identify(ipl);
 }

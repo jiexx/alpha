@@ -13,17 +13,20 @@ struct Piece{
 	char c;
 	inline Piece( int a, char b ) : x(a), c(b){};
 };
+
+#define COUNT_DIGT 6
+
 class recognize
 {
 public:
 	recognize();
 	~recognize();
-	void load( const char imageslist[][8], int size );
+	void load( const char imageslist[][8], int size, bool conv_save = false );
 	IplImage* preprocessing(IplImage* src);
 	void prepare();
 	int classify(IplImage* img);
-	vector<Piece> identify(IplImage* input);
-	vector<Piece> test(const char* file);
+	const char* identify(IplImage* input);
+	const char* test(const char* file);
 	const char* characterize(HWND hWnd, const CvRect& rect);
 protected:
 	static bool sortx(const Piece &v1, const Piece &v2);
@@ -36,6 +39,5 @@ protected:
 	int mNumOfSamples;
 	IplImage** mArrImg;
 	int K;
-#define RESULT_SIZE 16
-	char mResult[RESULT_SIZE];
+	char mResult[COUNT_DIGT+1];
 };
