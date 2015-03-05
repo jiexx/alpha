@@ -166,6 +166,7 @@ public:
 		};
 		void keyClick( const char* keys ) {
 			int len = strlen(keys);
+			Sleep(100);
 			for( int k = 0; k < len; k ++ ) {
 				KeyPress(keys[k]);
 			}
