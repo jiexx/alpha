@@ -13,7 +13,9 @@ HMENU hMenu;            //托盘菜单
 
 recognize* g_reco;
 
-
+#define ID_PAI_1   0x5001
+#define ID_PAI_2   0x5002
+#define ID_PAI_3   0x5003
 #define ID_PAI   0x5000
 #define ID_QUIT         0X6000 
 
@@ -59,7 +61,9 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 		g_reco->load();
 		g_reco->prepare();
 	}
-	utils::open_dll();
+	//utils::open_dll();
+	g_ver = GetOSVer();
+
 	
 	// 主消息循环:
 	while (GetMessage(&msg, NULL, 0, 0))
@@ -75,7 +79,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 		delete g_reco;
 		g_reco = NULL;
 	}
-	utils::close_dll();
+	//utils::close_dll();
 
 	return (int) msg.wParam;
 }
@@ -140,11 +144,16 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		return FALSE;
 	}
 
+	InitTray(hInst, hWnd);
+
 	ShowWindow(hWnd, nCmdShow);
 	UpdateWindow(hWnd);
 
 	BOOL bRes  = RegisterHotKey(hWnd, ID_PAI, MOD_CONTROL, ' ');// ctrl+alt+0(小键盘的0) 
-	bRes  = RegisterHotKey(hWnd, ID_QUIT, MOD_CONTROL, '1'); //ctrl+alt+1(小键盘的1) 
+	bRes  = RegisterHotKey(hWnd, ID_QUIT, MOD_CONTROL, 'q'); //ctrl+alt+1(小键盘的1) 
+	bRes  = RegisterHotKey(hWnd, ID_PAI_1,  0, VK_F1); 
+	bRes  = RegisterHotKey(hWnd, ID_PAI_2,  0, VK_F2); 
+	bRes  = RegisterHotKey(hWnd, ID_PAI_3,  0, VK_F3); 
 	return TRUE;
 }
 
@@ -182,26 +191,34 @@ LRESULT CALLBACK QuitWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 LRESULT CALLBACK PaiWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HWND h = FindWindow(L"TImageForm", L"额度投标网络客户端");
-	if ( h ) {
+	WINDOWINFO wi;
+	GetWindowInfo(h, &wi);
+	if ( h && wi.dwWindowStatus == WS_ACTIVECAPTION  ) {
 		RECT r;
 		GetWindowRect(h, &r);
 		SwitchToThisWindow(h, TRUE);
 		///////////////////////////////identify///////////////////////////////
 		if( g_reco ) {
-			const char* str = g_reco->characterize( h, 283, 150, 113, 31);
+			const char* str;
+			if( g_ver == 2 ) 
+				str = g_reco->characterize( h, 284, 155, 111, 30);
+			else
+				str = g_reco->characterize( h, 283, 150, 113, 31);
 			SwitchToThisWindow(h, TRUE);
-			utils::keyClicks( str );
+			utils::keyClick( str );
 			//__asm 
 			//{
 			//	OUT 0x64,0xD2
 			//}
 		}
 		///////////////////////////////ok/////////////////////////////////////
-		//utils::mouseClick(r.left+160, r.top+250);
+		Sleep(1);
+		utils::mouseClick(r.left+160, r.top+250);
 		return 0;
 	}
 	h = FindWindow(L"TErrorBoxForm", L"额度投标网络客户端");
-	if( h ) {
+	GetWindowInfo(h, &wi);
+	if( h && wi.dwWindowStatus == WS_ACTIVECAPTION ) {
 		RECT r;
 		GetWindowRect(h, &r);
 		SwitchToThisWindow(h, TRUE);
@@ -209,7 +226,8 @@ LRESULT CALLBACK PaiWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		return 0;
 	}
 	h = FindWindow(L"TMainForm", NULL);
-	if( h ) {
+	GetWindowInfo(h, &wi);
+	if( h && wi.dwWindowStatus == WS_ACTIVECAPTION ) {
 		RECT r;
 		GetWindowRect(h, &r);
 		SwitchToThisWindow(h, TRUE);
@@ -217,6 +235,30 @@ LRESULT CALLBACK PaiWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		return 0;
 	}
 	return 0;
+}
+void Pai123( int select ){
+	int x, y;
+	switch(select){
+	case 1:
+		x = 822;y = 388;
+		break;
+	case 2:
+		x = 738;y = 388;
+		break;
+	case 3:
+		x = 658;y = 388;
+		break;
+	}
+	HWND h = FindWindow(L"TMainForm", NULL);
+	WINDOWINFO wi;
+	GetWindowInfo(h, &wi);
+	if( h && wi.dwWindowStatus == WS_ACTIVECAPTION ) {
+		RECT r;
+		GetWindowRect(h, &r);
+		SwitchToThisWindow(h, TRUE);
+		utils::mouseClick(r.left+x, r.top+y);
+		utils::mouseClick(r.left+810, r.top+438);
+	}
 }
 //
 //  函数: WndProc(HWND, UINT, WPARAM, LPARAM)
@@ -237,6 +279,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 	case WM_HOTKEY:
 		switch(wParam) {
+		case ID_PAI_1:
+			Pai123(1);
+			break;
+		case ID_PAI_2:
+			Pai123(2);
+			break;
+		case ID_PAI_3:
+			Pai123(3);
+			break;
 		case ID_PAI:
 			PaiWndProc(hWnd, message, wParam, lParam);
 			break;

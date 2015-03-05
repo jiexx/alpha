@@ -26,6 +26,39 @@ const static short scan_code[10][2] = {
 		{0x0a, 0x8a}, //9
 };
 
+int GetOSVer()  
+{  
+	OSVERSIONINFO   osver;     
+	osver.dwOSVersionInfoSize   =   sizeof(OSVERSIONINFO);     
+	GetVersionEx(&osver);     
+	if(osver.dwPlatformId == 2)  
+	{  
+		if(osver.dwMajorVersion == 5 && osver.dwMinorVersion == 1)  
+		{  
+			//printf("xp\n");  
+			return(2);  
+		}  
+		if(osver.dwMajorVersion == 5 && osver.dwMinorVersion == 2)  
+		{  
+			//printf("windows 2003\n");  
+			return(3);  
+		}  
+		if(osver.dwMajorVersion ==  6 && osver.dwMinorVersion == 0)  
+		{  
+			//printf("vista and 2008\n");  
+			return(4);  
+		}  
+		if(osver.dwMajorVersion ==  6 && osver.dwMinorVersion == 1)  
+		{  
+			//printf("2008 R2 and Windows 7\n");  
+			return(5);  
+		}  
+	}  
+	return 0;  
+} 
+
+static int g_ver = 0;
+
 static void* g_dll = 0;
 
 class utils {
@@ -75,6 +108,7 @@ public:
 	};
 
 	inline static void keyClick( const char* keys ) {
+		Sleep(80);
 		int len = strlen(keys);
 		vector<INPUT> in;
 		for( int k = 0; k < len; k ++ ) {
@@ -92,6 +126,7 @@ public:
 		}
 
 		SendInput(in.size(), in.data(), sizeof(INPUT));
+		Sleep(1);
 	};
 
 	class dll {

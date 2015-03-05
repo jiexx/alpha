@@ -22,7 +22,7 @@ recognize::~recognize(){
 	if( mArrImg ) {
 		for( int i = 0; i < mNumOfCls*mNumOfSamples; i ++ ) {
 			if( mArrImg[i] ) {
-				delete mArrImg[i];
+				cvReleaseImage( &mArrImg[i] );
 				mArrImg[i] = NULL;
 			}
 		}
@@ -276,11 +276,18 @@ int filterChanales( const Mat& input, Mat& output, int bgr, vector<Rect>& bounds
 
 	cvtColor(ccc, gray, CV_BGR2GRAY); 
 	threshold(gray, binary, 0, 255, CV_THRESH_BINARY_INV | CV_THRESH_OTSU);
+	imwrite("binary.jpg",binary);
 
 	binary.copyTo(output);
+	string a;
+	a = "filterChanales";
+	a += bgr+'0';
+	a += ".jpg";
+	imwrite(a.c_str(),output);
 
 	vector<vector<Point>> contours;
 	findContours(binary, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+	bounds.clear();
 	if( contours.size() == COUNT_DIGT ) {
 		for (unsigned int i = 0; i < contours.size(); ++i) {      
 			bounds.push_back( boundingRect(Mat(contours[i])) ); 
@@ -332,6 +339,7 @@ int getBoundRect( vector<vector<Point>>& contours, vector<Rect>& output ) {
 	sort( boundRect.begin(), boundRect.end(), sort_rect );
 
 	vector<Rect>& splits = output;
+	splits.clear();
 	splits.push_back(boundRect[0]);
 	int last;
 	Rect merge_r;
@@ -377,18 +385,19 @@ int filterErode( const Mat& input, Mat& output,  vector<Rect>& bounds ) {
 	vector< vector< Point> > contours;
 	findContours(erosion, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
 	//drawContours(dilation, contours, 0, Scalar(255, 0, 0), 1);
-
-	if( getBoundRect(contours, bounds) ) {
-		for( unsigned int i = 0; i < bounds.size(); i ++ ) {
-			rectangle( erosion, bounds[i].tl(), bounds[i].br(), Scalar(255, 0, 0));
+	if( contours.size() > 0 ) {
+		if( getBoundRect(contours, bounds) ) {
+			for( unsigned int i = 0; i < bounds.size(); i ++ ) {
+				rectangle( erosion, bounds[i].tl(), bounds[i].br(), Scalar(255, 0, 0));
+			}
+			imwrite( "rectangle.jpg", erosion );
+			return 1;
 		}
-		imwrite( "rectangle.jpg", erosion );
-		return 1;
 	}
 	for( unsigned int i = 0; i < bounds.size(); i ++ ) {
 		rectangle( erosion, bounds[i].tl(), bounds[i].br(), Scalar(255, 0, 0));
 	} 
-	imwrite( "rectangle.jpg", erosion ); 
+	imwrite( "rectangle-e.jpg", erosion ); 
 	bounds.clear();
 	return 0;
 	
@@ -400,11 +409,11 @@ const char* recognize::identify(IplImage* img) {
 	/////////split////////
 	Mat input(img, 0), output;
 	vector<Rect> boundRect;
-	/*if( !filterChanales( input, output, 0, contours ) ) 
-		if( !filterChanales( input, output, 1, contours ) ) 
-			if( !filterChanales( input, output, 2, contours ) ) ;*/
-	if( !filterErode( input, output, boundRect ) )
-		return NULL;
+	if( !filterChanales( input, output, 0, boundRect ) ) 
+		if( !filterChanales( input, output, 1, boundRect ) ) 
+			if( !filterChanales( input, output, 2, boundRect ) ) 
+				if( !filterErode( input, output, boundRect ) )
+					return NULL;
 	    
 	for (unsigned int i = 0; i < boundRect.size(); ++i) {    
 		//Scalar color = Scalar(0, 0, 0);/*bb outline*/      
