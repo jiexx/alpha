@@ -3,12 +3,15 @@
 
 #include "stdafx.h"
 #include "paipai.h"
+#include "recognize.h"
 
 #define MAX_LOADSTRING 100
 #define WM_TRAY (WM_USER + 100) 
 #define WM_TASKBAR_CREATED RegisterWindowMessage(TEXT("TaskbarCreated")) 
 NOTIFYICONDATA nid;     //托盘属性  
 HMENU hMenu;            //托盘菜单  
+
+recognize* g_reco;
 
 
 #define ID_PAI   0x5000
@@ -51,6 +54,13 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 
 	hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_PAIPAI));
 
+	g_reco = new recognize();
+	if( g_reco != NULL ) {
+		g_reco->load();
+		g_reco->prepare();
+	}
+	utils::open_dll();
+	
 	// 主消息循环:
 	while (GetMessage(&msg, NULL, 0, 0))
 	{
@@ -60,6 +70,12 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 			DispatchMessage(&msg);
 		}
 	}
+
+	if( g_reco != NULL ) {
+		delete g_reco;
+		g_reco = NULL;
+	}
+	utils::close_dll();
 
 	return (int) msg.wParam;
 }
@@ -170,7 +186,18 @@ LRESULT CALLBACK PaiWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		RECT r;
 		GetWindowRect(h, &r);
 		SwitchToThisWindow(h, TRUE);
-		utils::mouseClick(r.left+160, r.top+250);
+		///////////////////////////////identify///////////////////////////////
+		if( g_reco ) {
+			const char* str = g_reco->characterize( h, 283, 150, 113, 31);
+			SwitchToThisWindow(h, TRUE);
+			utils::keyClicks( str );
+			//__asm 
+			//{
+			//	OUT 0x64,0xD2
+			//}
+		}
+		///////////////////////////////ok/////////////////////////////////////
+		//utils::mouseClick(r.left+160, r.top+250);
 		return 0;
 	}
 	h = FindWindow(L"TErrorBoxForm", L"额度投标网络客户端");

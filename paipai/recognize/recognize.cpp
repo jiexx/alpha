@@ -13,17 +13,26 @@ recognize::recognize(){
 	K = 1;
 	mNormSize = 32;
 	mKNN = NULL;
-	mNumOfCls = 10;
-	mNumOfSamples = 2;
+	mNumOfCls = CLASSES;
+	mNumOfSamples = SAMPLES;
 	mTrainData = cvCreateMat( mNumOfSamples*mNumOfCls, mNormSize*mNormSize, CV_32FC1 );// rows, col, type
 	mTrainClasses = cvCreateMat( mNumOfSamples*mNumOfCls, 1, CV_32FC1 );
 }
 recognize::~recognize(){
 	if( mArrImg ) {
+		for( int i = 0; i < mNumOfCls*mNumOfSamples; i ++ ) {
+			if( mArrImg[i] ) {
+				delete mArrImg[i];
+				mArrImg[i] = NULL;
+			}
+		}
 		delete[] mArrImg;
+		mArrImg = NULL;
 	}
-	if( mKNN )
+	if( mKNN ) {
 		delete mKNN;
+		mKNN = NULL;
+	}
 }
 
 void write( const char* f, vector<unsigned char>& v ) {
@@ -55,7 +64,7 @@ string i2a(int x) {
 }
 
 void recognize::load( const char imageslist[][8], int size, bool conv_save ){
-	if( size != mNumOfCls*mNumOfSamples ) 
+	if( size != mNumOfCls*mNumOfSamples && size != 0 ) 
 		return;
 	
 	mArrImg = (IplImage**)new IplImage[mNumOfCls*mNumOfSamples];
@@ -65,13 +74,12 @@ void recognize::load( const char imageslist[][8], int size, bool conv_save ){
 				vector<unsigned char> data/*(str, str+strlen(str))*/;
 				read(dat[i*mNumOfSamples + j], data);
 				Mat image = imdecode(Mat(data), CV_LOAD_IMAGE_GRAYSCALE );
-				ofstream os(i2a(i)+i2a(j)+".png",ios_base::binary|ios_base::out);
-				image.copyTo(mArrImg[i*mNumOfSamples + j]);
-				for ( vector<unsigned char>::iterator itr=data.begin(); itr!=data.end(); itr++ ) {
-					os << *itr;
-				}
-				mArrImg[i*mNumOfSamples + j] =  new IplImage(image);
-				imwrite(i2a(i)+i2a(j)+".png",Mat());
+				//ofstream os(i2a(i)+i2a(j)+".png",ios_base::binary|ios_base::out);
+				//for ( vector<unsigned char>::iterator itr=data.begin(); itr!=data.end(); itr++ ) {
+				//	os << *itr;
+				//}
+				mArrImg[i*mNumOfSamples + j] =  cvCloneImage(&(IplImage)image);
+				//imwrite(i2a(i)+i2a(j)+".png",Mat());
 			} else {
 				mArrImg[i*mNumOfSamples + j] = cvLoadImage(imageslist[i*mNumOfSamples + j],0);
 				if( conv_save ) {
@@ -127,8 +135,8 @@ void recognize::prepare(){
 		}
 	}
 	mKNN = new CvKNearest( mTrainData, mTrainClasses, 0, false, K );
-	imwrite( "mTrainData.jpg", Mat(mTrainData) );
-	imwrite( "mTrainClasses.jpg", Mat(mTrainClasses) );
+	//imwrite( "mTrainData.jpg", Mat(mTrainData) );
+	//imwrite( "mTrainClasses.jpg", Mat(mTrainClasses) );
 	//if( mKNN ) {
 	//	mKNN->save();
 	//}
@@ -139,15 +147,17 @@ int recognize::classify(IplImage* img){
 	CvMat* nearest=cvCreateMat(1,K,CV_32FC1);
 
 	p = preprocessing(img);
-	imwrite( "p.jpg", Mat(p) );
+	//imwrite( "p.jpg", Mat(p) );
+
 
 	cvGetSubRect( p, &dat, cvRect(0,0,mNormSize,mNormSize) );
 	CvMat row_header, *row1;
 	row1 = cvReshape( &dat, &row_header, 0, 1 );
-	imwrite( "row1.jpg", Mat(row1) );
+	//imwrite( "row1.jpg", Mat(row1) );
 
 	float result = mKNN->find_nearest(row1,K,0,0,nearest,0);
-	imwrite( "nearest.jpg", Mat(nearest) );
+	//imwrite( "nearest.jpg", Mat(nearest) );
+	cvReleaseImage(&p);
 	return (int) result;
 }
 
@@ -162,7 +172,7 @@ IplImage* bmp2ipl(BITMAPINFO* bi, BYTE* data) {
 	int depth  =  IPL_DEPTH_8U;
 
 	int width=bi->bmiHeader.biWidth;
-	int heigh=bi->bmiHeader.biHeight;
+	int heigh=-bi->bmiHeader.biHeight;
 
 	IplImage *pmg;
 
@@ -197,7 +207,7 @@ IplImage* capture(HWND hWnd) {
 	CONST int nBitCount = 24;  
 	bi.biSize = sizeof(BITMAPINFOHEADER);  
 	bi.biWidth = bitmap.bmWidth;  
-	bi.biHeight = bitmap.bmHeight;  
+	bi.biHeight = -bitmap.bmHeight; //revert graphic by vert 
 	bi.biPlanes = 1;  
 	bi.biBitCount = nBitCount;  
 	bi.biCompression = BI_RGB;  
@@ -225,7 +235,7 @@ IplImage* capture(HWND hWnd) {
 	DeleteObject(hBMP);  
 	DeleteDC(hComatibleDC);  
 	ReleaseDC(hWnd, hDC);  
-
+	imwrite("bmp2ipl.jpg",Mat(result));
 	return result;  
 } 
 
@@ -233,7 +243,9 @@ IplImage* focus(HWND hWnd, const CvRect& rect) {
 	IplImage* ipli = capture(hWnd);
 	CvMat* mat = cvGetSubRect(ipli, cvCreateMatHeader(rect.height, rect.width, CV_8UC1), rect);
 	IplImage *header = cvCreateImageHeader(cvSize(rect.width, rect.height), ipli->depth, ipli->nChannels);
-	return cvGetImage(mat, header);
+	IplImage* p = cvGetImage(mat, header);
+	cvReleaseImage(&ipli);
+	return p;
 }
 
 //Mat pickoutLines( IplImage* img ) {
@@ -403,20 +415,23 @@ const char* recognize::identify(IplImage* img) {
 		IplImage *src = cvCreateImage(cvSize(roi.width, roi.height), orig.depth, orig.nChannels);   
 		cvSetImageROI(&orig, roi);    
 		cvCopy(&orig, src);  
-		imwrite( "orig.jpg", output ); 
+		//imwrite( "orig.jpg", output ); 
 		cvResetImageROI(&orig);    
 
-		imwrite( "roi.jpg", Mat(src,0) ); 
+		//imwrite( "roi.jpg", Mat(src,0) ); 
 
 		IplImage *one;    
 		one = cvCreateImage(cvSize(mNormSize, mNormSize), IPL_DEPTH_8U, 1);    
 		cvResize(src, one);    
 		cvThreshold(one, one, 0, 255, CV_THRESH_BINARY);  
 
-		imwrite( "Threshold.jpg", Mat(one,0) ); 
+		//imwrite( "Threshold.jpg", Mat(one,0) ); 
 
 		int ret = classify(one);       
 		result.push_back( Piece(boundRect[i].tl().x,ret) );
+		cvReleaseImage(&src);
+		cvReleaseImage(&one);
+
 	}
 	
 	////////sort////////////
@@ -443,9 +458,13 @@ const char* recognize::test(const char* file) {
 	return identify(&ipl);
 }
 
-const char* recognize::characterize(HWND hWnd, const CvRect& rect) {
+const char* recognize::characterize(HWND hWnd, int x, int y, int w, int h) {
 	memset(mResult, 0, COUNT_DIGT+1);
-	IplImage* ipl = focus(hWnd, rect);
+	IplImage* ipl = focus(hWnd, cvRect(x,y,w,h));
 
-	return identify(ipl);
+	identify(ipl);
+
+	imwrite("focus.jpg",Mat(ipl));
+	//cvReleaseImage(&ipl);
+	return mResult;
 }

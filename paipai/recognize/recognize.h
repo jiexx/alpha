@@ -21,13 +21,13 @@ class recognize
 public:
 	recognize();
 	~recognize();
-	void load( const char imageslist[][8], int size, bool conv_save = false );
+	void load( const char imageslist[][8] = NULL, int size = 0, bool conv_save = false );
 	IplImage* preprocessing(IplImage* src);
 	void prepare();
 	int classify(IplImage* img);
 	const char* identify(IplImage* input);
 	const char* test(const char* file);
-	const char* characterize(HWND hWnd, const CvRect& rect);
+	const char* characterize(HWND hWnd, int x, int y, int w, int h);
 protected:
 	static bool sortx(const Piece &v1, const Piece &v2);
 protected:
