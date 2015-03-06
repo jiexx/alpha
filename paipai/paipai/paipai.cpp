@@ -21,6 +21,12 @@ recognize* g_reco;
 
 // 全局变量:
 HINSTANCE hInst;								// 当前实例
+HWND hDlg;
+HWND hEdit1;
+HWND hEdit2;
+HWND hEdit3;
+HWND hEdit4;
+
 TCHAR szTitle[MAX_LOADSTRING];					// 标题栏文本
 TCHAR szWindowClass[MAX_LOADSTRING];			// 主窗口类名
 
@@ -120,6 +126,30 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 	return RegisterClassEx(&wcex);
 }
 
+//实例化托盘  
+void InitTray(HINSTANCE hInstance, HWND hWnd)  
+{  
+    nid.cbSize = sizeof(NOTIFYICONDATA);  
+    nid.hWnd = hWnd;  
+    nid.uID = 0;  
+    nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP | NIF_INFO;  
+    nid.uCallbackMessage = WM_TRAY;  
+    nid.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_PAIPAI));  
+    lstrcpy(nid.szTip, szWindowClass);  
+  
+	POINT pt;
+	GetCursorPos(&pt);
+    hMenu = CreatePopupMenu();//生成托盘菜单  
+    //为托盘菜单添加两个选项  
+    AppendMenu(hMenu, MF_STRING, ID_DESC, L"说明"); 
+	AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
+    AppendMenu(hMenu, MF_STRING, ID_CLOSE, L"关闭");  
+
+	//TrackPopupMenu(hMenu, TPM_RIGHTBUTTON, pt.x, pt.y, 0, hWnd, NULL);
+  
+    Shell_NotifyIcon(NIM_ADD, &nid);  
+} 
+
 //
 //   函数: InitInstance(HINSTANCE, int)
 //
@@ -144,10 +174,10 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		return FALSE;
 	}
 
-	InitTray(hInst, hWnd);
-
 	ShowWindow(hWnd, nCmdShow);
 	UpdateWindow(hWnd);
+
+	InitTray(hInst, hWnd);
 
 	BOOL bRes  = RegisterHotKey(hWnd, ID_PAI, MOD_CONTROL, ' ');// ctrl+alt+0(小键盘的0) 
 	bRes  = RegisterHotKey(hWnd, ID_QUIT, MOD_CONTROL, 'q'); //ctrl+alt+1(小键盘的1) 
@@ -157,10 +187,41 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	return TRUE;
 }
 
+LRESULT CALLBACK DlgWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
+{
+	switch ( message ){
+	case WM_INITDIALOG:
+		hEdit1   =   GetDlgItem(hWnd,   IDC_EDIT1); 
+		hEdit2   =   GetDlgItem(hWnd,   IDC_EDIT2); 
+		hEdit3   =   GetDlgItem(hWnd,   IDC_EDIT3); 
+		hEdit4   =   GetDlgItem(hWnd,   IDC_EDIT4); 
+		SetWindowText(hEdit1, L"F1");
+		SetWindowText(hEdit2, L"F2");
+		SetWindowText(hEdit3, L"F3");
+		SetWindowText(hEdit4, L"CTRL+空格");
+		break;
+	case WM_SETTEXT:
+		//if((HWND)lParam   ==   hwnd_static){   
+		//SendMessage(hEdit1, WM_SETTEXT, NULL, (LPARAM) _T("F1"));
+		//SendMessage(hEdit2, WM_SETTEXT, NULL, (LPARAM) _T("F2"));
+		//SendMessage(hEdit3, WM_SETTEXT, NULL, (LPARAM) _T("F3"));
+		//SendMessage(hEdit4, WM_SETTEXT, NULL, (LPARAM) _T("CTRL+空格"));
+		break;
+	case WM_COMMAND:
+		if( wParam == IDOK ) {
+			//PostMessage(hDlg, WM_DESTROY, NULL, NULL);  
+			DestroyWindow(hDlg);
+		}
+		break;
+	default:
+		return FALSE;
+	}
+	return TRUE;
+}
+
 LRESULT CALLBACK TrayWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	switch(lParam)  
-	{  
+	switch(lParam)  {  
 		case WM_RBUTTONDOWN:  
 		{  
 			//获取鼠标坐标  
@@ -172,12 +233,27 @@ LRESULT CALLBACK TrayWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 			//使菜单某项变灰  
 			//EnableMenuItem(hMenu, ID_SHOW, MF_GRAYED);      
   
-			//显示并获取选中的菜单  
+			//点选菜单后就会自动销毁菜单
 			int cmd = TrackPopupMenu(hMenu, TPM_RETURNCMD, pt.x, pt.y, NULL, hWnd, NULL);  
-			if(cmd == ID_EXIT)   
+			int code;
+			//char debug[128]={0};
+			//sprintf(debug, "cmd %d \n", cmd);
+			//OutputDebugStringA(debug);
+			switch( cmd ){
+			case ID_DESC:
+				if (!IsWindow(hDlg)){
+					hDlg = CreateDialog( hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, (DLGPROC)DlgWndProc );
+					//code = GetLastError();
+					ShowWindow( hDlg, SW_SHOW );
+				}
+				break;
+			case ID_CLOSE:
 				PostMessage(hWnd, WM_DESTROY, NULL, NULL);  
+			}
 		}  
-		break; 
+		break;
+	default:
+		return FALSE;
 	}
 	return 0;
 }
@@ -296,6 +372,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 		}
 		break;
+	case WM_COMMAND:	
+		DlgWndProc(hWnd, message, wParam, lParam);
+		break;
 	case WM_TRAY:
 		TrayWndProc(hWnd, message, wParam, lParam);
 		break;
@@ -314,27 +393,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	}
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
-
-
-
-//实例化托盘  
-void InitTray(HINSTANCE hInstance, HWND hWnd)  
-{  
-    nid.cbSize = sizeof(NOTIFYICONDATA);  
-    nid.hWnd = hWnd;  
-    nid.uID = 0;  
-    nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP | NIF_INFO;  
-    nid.uCallbackMessage = WM_TRAY;  
-    nid.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_PAIPAI));  
-    lstrcpy(nid.szTip, szWindowClass);  
-  
-    hMenu = CreatePopupMenu();//生成托盘菜单  
-    //为托盘菜单添加两个选项  
-    AppendMenu(hMenu, MF_STRING, ID_SHOW, TEXT("hint"));  
-    AppendMenu(hMenu, MF_STRING, ID_EXIT, TEXT("exit"));  
-  
-    Shell_NotifyIcon(NIM_ADD, &nid);  
-}  
+ 
   
 //演示托盘气泡提醒  
 void ShowTrayMsg()  
