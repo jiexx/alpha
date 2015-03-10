@@ -4,6 +4,7 @@
 #include "vector"
 #include "string"
 #include "winio.h"
+#include "time.h"
 
 using namespace std;
 
@@ -108,7 +109,7 @@ public:
 	};
 
 	inline static void keyClick( const char* keys ) {
-		Sleep(80);
+		//Sleep(100);
 		int len = strlen(keys);
 		vector<INPUT> in;
 		for( int k = 0; k < len; k ++ ) {
@@ -126,7 +127,44 @@ public:
 		}
 
 		SendInput(in.size(), in.data(), sizeof(INPUT));
-		Sleep(1);
+		//Sleep(1);
+	};
+	inline static time_t fmt_time_t(char * szTime)  
+	{  
+		struct tm tm1, *curr1;
+		time_t time1, curr2;  
+		time( &curr2 ); 
+		curr1 = localtime( &curr2 );
+		memcpy( &tm1, curr1, sizeof(tm1));
+		sscanf(szTime, "%2d:%2d:%2d",      
+			&tm1.tm_hour,   
+			&tm1.tm_min,  
+			&tm1.tm_sec);  
+		time1 = mktime(&tm1);  
+		return time1;  
+	};
+	inline static time_t curr_time_t()  
+	{  
+		time_t curr2;  
+		time( &curr2 ); 
+		return curr2;  
+	};
+	inline static time_t totime_t(char * szTime)  
+	{  
+		struct tm tm1;  
+		time_t time1;  
+		sscanf(szTime, "%4d:%2d:%2d:%2d:%2d:%2d",      
+			&tm1.tm_year,   
+			&tm1.tm_mon,   
+			&tm1.tm_mday,   
+			&tm1.tm_hour,   
+			&tm1.tm_min,  
+			&tm1.tm_sec);  
+		tm1.tm_year -= 1900;  
+		tm1.tm_mon --; 
+		tm1.tm_isdst=-1;  
+		time1 = mktime(&tm1);  
+		return time1;  
 	};
 
 	class dll {

@@ -10,6 +10,7 @@
 #define WM_TASKBAR_CREATED RegisterWindowMessage(TEXT("TaskbarCreated")) 
 NOTIFYICONDATA nid;     //托盘属性  
 HMENU hMenu;            //托盘菜单  
+HWND hWnd;
 
 recognize* g_reco;
 
@@ -26,6 +27,12 @@ HWND hEdit1;
 HWND hEdit2;
 HWND hEdit3;
 HWND hEdit4;
+HWND hEdit5;
+HWND hEdit6;
+HWND hCheckbox;
+bool g_auto = false;
+char g_auto_time[10] = {"11:29:45"};
+char g_auto_price[6] = {"300"};
 
 TCHAR szTitle[MAX_LOADSTRING];					// 标题栏文本
 TCHAR szWindowClass[MAX_LOADSTRING];			// 主窗口类名
@@ -116,12 +123,12 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 	wcex.cbClsExtra		= 0;
 	wcex.cbWndExtra		= 0;
 	wcex.hInstance		= hInstance;
-	wcex.hIcon			= NULL;//LoadIcon(hInstance, MAKEINTRESOURCE(IDI_PAIPAI));
+	wcex.hIcon			= LoadIcon(hInstance, MAKEINTRESOURCE(IDI_PAIPAI));
 	wcex.hCursor		= NULL;//LoadCursor(NULL, IDC_ARROW);
 	wcex.hbrBackground	= NULL;//(HBRUSH)(COLOR_WINDOW+1);
 	wcex.lpszMenuName	= NULL;//MAKEINTRESOURCE(IDC_PAIPAI);
 	wcex.lpszClassName	= szWindowClass;
-	wcex.hIconSm		= NULL;//LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+	wcex.hIconSm		= LoadIcon(hInstance, MAKEINTRESOURCE(IDI_PAIPAI));
 
 	return RegisterClassEx(&wcex);
 }
@@ -162,8 +169,6 @@ void InitTray(HINSTANCE hInstance, HWND hWnd)
 //
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
-	HWND hWnd;
-
 	hInst = hInstance; // 将实例句柄存储在全局变量中
 
 	hWnd = CreateWindowEx(WS_EX_TOOLWINDOW, szWindowClass, szTitle, WS_POPUP, CW_USEDEFAULT,  
@@ -179,7 +184,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	InitTray(hInst, hWnd);
 
-	BOOL bRes  = RegisterHotKey(hWnd, ID_PAI, MOD_CONTROL, ' ');// ctrl+alt+0(小键盘的0) 
+	BOOL bRes  = RegisterHotKey(hWnd, ID_PAI, 0, VK_F5);// ctrl+alt+0(小键盘的0) 
 	bRes  = RegisterHotKey(hWnd, ID_QUIT, MOD_CONTROL, 'q'); //ctrl+alt+1(小键盘的1) 
 	bRes  = RegisterHotKey(hWnd, ID_PAI_1,  0, VK_F1); 
 	bRes  = RegisterHotKey(hWnd, ID_PAI_2,  0, VK_F2); 
@@ -187,18 +192,24 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	return TRUE;
 }
 
-LRESULT CALLBACK DlgWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
+LRESULT CALLBACK DlgWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 {
 	switch ( message ){
 	case WM_INITDIALOG:
-		hEdit1   =   GetDlgItem(hWnd,   IDC_EDIT1); 
-		hEdit2   =   GetDlgItem(hWnd,   IDC_EDIT2); 
-		hEdit3   =   GetDlgItem(hWnd,   IDC_EDIT3); 
-		hEdit4   =   GetDlgItem(hWnd,   IDC_EDIT4); 
+		hEdit1   =   GetDlgItem(hwnd,   IDC_EDIT1); 
+		hEdit2   =   GetDlgItem(hwnd,   IDC_EDIT2); 
+		hEdit3   =   GetDlgItem(hwnd,   IDC_EDIT3); 
+		hEdit4   =   GetDlgItem(hwnd,   IDC_EDIT4); 
+		hEdit5   =   GetDlgItem(hwnd,   IDC_EDIT5); 
+		hEdit6   =   GetDlgItem(hwnd,   IDC_EDIT6);
+		hCheckbox=   GetDlgItem(hwnd,   IDC_CHECK1);
 		SetWindowText(hEdit1, L"F1");
 		SetWindowText(hEdit2, L"F2");
 		SetWindowText(hEdit3, L"F3");
-		SetWindowText(hEdit4, L"CTRL+空格");
+		SetWindowText(hEdit4, L"F5");
+		SetWindowTextA(hEdit5, g_auto_time);
+		SetWindowTextA(hEdit6, g_auto_price);
+		SendMessage(hCheckbox, BM_SETCHECK, g_auto, 0);
 		break;
 	case WM_SETTEXT:
 		//if((HWND)lParam   ==   hwnd_static){   
@@ -210,7 +221,17 @@ LRESULT CALLBACK DlgWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_COMMAND:
 		if( wParam == IDOK ) {
 			//PostMessage(hDlg, WM_DESTROY, NULL, NULL);  
+			int n = SendMessage(hCheckbox, BM_GETCHECK, 0, 0);
+			g_auto = n == BST_CHECKED ? true :false;
+			GetWindowTextA(hEdit5, g_auto_time, 9);
+			char price[8] = {0};
+			GetWindowTextA(hEdit6, g_auto_price, 8);
+			int elapse = utils::fmt_time_t(g_auto_time) - utils::curr_time_t();
+			SetTimer(hWnd, 518, elapse*1000, 0);
 			DestroyWindow(hDlg);
+			HWND h =  FindWindow(L"TMainForm", NULL);
+			BringWindowToTop(h);
+			SetFocus(h);
 		}
 		break;
 	default:
@@ -269,10 +290,12 @@ LRESULT CALLBACK PaiWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	HWND h = FindWindow(L"TImageForm", L"额度投标网络客户端");
 	WINDOWINFO wi;
 	GetWindowInfo(h, &wi);
-	if ( h && wi.dwWindowStatus == WS_ACTIVECAPTION  ) {
+	if ( h &&  wi.dwWindowStatus == WS_ACTIVECAPTION   ) {
+		SetForegroundWindow(h);
+		SetFocus(h);
+
 		RECT r;
 		GetWindowRect(h, &r);
-		SwitchToThisWindow(h, TRUE);
 		///////////////////////////////identify///////////////////////////////
 		if( g_reco ) {
 			const char* str;
@@ -280,38 +303,51 @@ LRESULT CALLBACK PaiWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				str = g_reco->characterize( h, 284, 155, 111, 30);
 			else
 				str = g_reco->characterize( h, 283, 150, 113, 31);
-			SwitchToThisWindow(h, TRUE);
+			
+			//HWND w = GetForegroundWindow() ;
+			//AttachThreadInput( GetWindowThreadProcessId(w, NULL), GetCurrentThreadId(), true);
+			//char debug[128]={0};
+			//sprintf(debug, "cmd 1 %x, focus %x, fore %x, act %x \n", h,  GetFocus(),GetForegroundWindow(), GetActiveWindow());
+			//OutputDebugStringA(debug);
+			
+			//sprintf(debug, "cmd 2 %x focus %x, w %x act %x \n", h, w, GetFocus(), GetActiveWindow());
+			//OutputDebugStringA(debug);
 			utils::keyClick( str );
+			//AttachThreadInput( GetWindowThreadProcessId(w, NULL), GetCurrentThreadId(), false);
 			//__asm 
 			//{
 			//	OUT 0x64,0xD2
 			//}
 		}
 		///////////////////////////////ok/////////////////////////////////////
-		Sleep(1);
 		utils::mouseClick(r.left+160, r.top+250);
 		return 0;
 	}
 	h = FindWindow(L"TErrorBoxForm", L"额度投标网络客户端");
 	GetWindowInfo(h, &wi);
-	if( h && wi.dwWindowStatus == WS_ACTIVECAPTION ) {
+	if( h &&  wi.dwWindowStatus == WS_ACTIVECAPTION ) {
+		SetForegroundWindow(h);
+		SetFocus(h);
+
 		RECT r;
 		GetWindowRect(h, &r);
-		SwitchToThisWindow(h, TRUE);
 		utils::mouseClick(r.left+250, r.top+250);
 		return 0;
 	}
 	h = FindWindow(L"TMainForm", NULL);
 	GetWindowInfo(h, &wi);
 	if( h && wi.dwWindowStatus == WS_ACTIVECAPTION ) {
+		SetForegroundWindow(h);
+		SetFocus(h);
+
 		RECT r;
 		GetWindowRect(h, &r);
-		SwitchToThisWindow(h, TRUE);
-		utils::mouseClick(r.left+580, r.top+440);
+		utils::mouseClick(r.left+820, r.top+440);
 		return 0;
 	}
 	return 0;
 }
+
 void Pai123( int select ){
 	int x, y;
 	switch(select){
@@ -328,12 +364,70 @@ void Pai123( int select ){
 	HWND h = FindWindow(L"TMainForm", NULL);
 	WINDOWINFO wi;
 	GetWindowInfo(h, &wi);
-	if( h && wi.dwWindowStatus == WS_ACTIVECAPTION ) {
+	if( h /*&& wi.dwWindowStatus == WS_ACTIVECAPTION */) {
 		RECT r;
 		GetWindowRect(h, &r);
-		SwitchToThisWindow(h, TRUE);
 		utils::mouseClick(r.left+x, r.top+y);
 		utils::mouseClick(r.left+810, r.top+438);
+	}
+}
+
+void AutoPai() {
+	HWND h = FindWindow(L"TMainForm", NULL);
+	BringWindowToTop(h);
+
+	Pai123(g_auto_price[0]-'0');
+
+	h = FindWindow(L"TImageForm", L"额度投标网络客户端");
+	WINDOWINFO wi;
+	GetWindowInfo(h, &wi);
+	while( wi.dwWindowStatus != WS_ACTIVECAPTION ) {
+		Sleep(1);
+		h = FindWindow(L"TImageForm", L"额度投标网络客户端");
+		GetWindowInfo(h, &wi);
+	}
+	if ( h ) {
+		BringWindowToTop(h);
+		SetForegroundWindow(h);
+		SetFocus(h);
+
+		RECT r;
+		GetWindowRect(h, &r);
+		
+		///////////////////////////////identify///////////////////////////////
+		if( g_reco ) {
+			const char* str;
+			if( g_ver == 2 ) 
+				str = g_reco->characterize( h, 284, 155, 111, 30);
+			else
+				str = g_reco->characterize( h, 283, 150, 113, 31);
+
+			//AttachThreadInput( GetWindowThreadProcessId(h, NULL), GetCurrentThreadId(), true);
+			utils::keyClick( str );
+			//AttachThreadInput( GetWindowThreadProcessId(h, NULL), GetCurrentThreadId(), false);
+			//__asm 
+			//{
+			//	OUT 0x64,0xD2
+			//}
+			char debug[128]={0};
+			sprintf(debug, " TImageForm %s %x\n", str, h);
+			OutputDebugStringA(debug);
+		}
+		
+		///////////////////////////////ok/////////////////////////////////////
+		utils::mouseClick(r.left+160, r.top+250);
+	}
+	h = FindWindow(L"TErrorBoxForm", L"额度投标网络客户端");
+	if( h ) {
+		SetForegroundWindow(h);
+		SetFocus(h);
+		return;
+		RECT r;
+		GetWindowRect(h, &r);
+		utils::mouseClick(r.left+250, r.top+250);
+		char debug[128]={0};
+		sprintf(debug, " TErrorBoxForm\n");
+		OutputDebugStringA(debug);
 	}
 }
 //
@@ -365,6 +459,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			Pai123(3);
 			break;
 		case ID_PAI:
+			//SetWindowPos(hWnd, HWND_TOP, 0, 0, 0, 0, SWP_ASYNCWINDOWPOS | SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
 			PaiWndProc(hWnd, message, wParam, lParam);
 			break;
 		case ID_QUIT:
@@ -386,7 +481,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_DESTROY:
 		Shell_NotifyIcon(NIM_DELETE, &nid);
 		PostQuitMessage(0);
-		break;		
+		break;	
+	case WM_TIMER:
+		if( g_auto ) 
+			AutoPai();
+		KillTimer( hWnd, 518 );
+		break;
 	}
 	if (message == WM_TASKBAR_CREATED){
 		Shell_NotifyIcon(NIM_ADD, &nid);  
