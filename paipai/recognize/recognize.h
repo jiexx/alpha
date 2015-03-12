@@ -22,8 +22,10 @@ public:
 	recognize();
 	~recognize();
 	void load( const char imageslist[][8] = NULL, int size = 0, bool conv_save = false );
+	void load2( const char imageslist[][8] = NULL, int size = 0, bool conv_save = false );
 	IplImage* preprocessing(IplImage* src);
 	void prepare();
+	void prepare2();
 	int classify(IplImage* img);
 	const char* identify(IplImage* input);
 	const char* test(const char* file);
@@ -34,6 +36,9 @@ protected:
 	CvKNearest* mKNN;
 	CvMat* mTrainClasses;
 	CvMat* mTrainData;
+	CKNearest* mKNN2;
+	Mat mTrainClasses2;
+	Mat mTrainData2;
 	int mNormSize;
 	int mNumOfCls;
 	int mNumOfSamples;

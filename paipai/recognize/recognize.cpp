@@ -4,12 +4,14 @@
 #include <fstream>
 #include "recognize.h"
 #include "dat.h"
-#include "thinner.h"
 
 #define BORDER 1
 #define DEF_WIDTH 14
 #define DEF_HEGITH 21
 #define MAX_GUARD 100000
+#define SC_LOGR 5
+#define SC_THETA 12
+#define SC_MAX_CORNERS 5
 
 recognize::recognize(){
 	K = 1;
@@ -67,24 +69,58 @@ string i2a(int x) {
 
 Mat toPolar(Mat image , int centerx, int centery, int m)
 {
-     if(image.empty())
-         return image;
-     cv::Mat pImage = cv::Mat::zeros(image.size(), CV_8UC1);
-     IplImage ipl_a = image, ipl_pa = pImage;
-     cvLogPolar(&ipl_a, &ipl_pa, cvPoint2D32f(centerx, centery), m);
-     return pImage;
+	if(image.empty())
+		return image;
+	Mat pImage = Mat(image.size(), CV_8UC1);
+	Mat result = Mat::zeros(Size(SC_LOGR, SC_THETA), CV_8UC1);
+	IplImage ipl_a = image, ipl_pa = pImage;
+	cvLogPolar(&ipl_a, &ipl_pa, cvPoint2D32f(centerx, centery), m);
+	
+	int theta_y_unit = ceil(((float)pImage.rows)/SC_THETA), 
+		logr_x_unit = ceil(((float)pImage.cols)/SC_LOGR),
+		theta_y, logr_x, countx = 0, county = 0;
+	unsigned char* p, *to;  
+	for( int i = 0; i < pImage.rows; i ++ ) {
+		if( county == theta_y_unit ) {
+			county = 0;
+		}else {
+			county ++;
+		}
+		if( !county ) {
+			theta_y ++;
+			to = result.ptr<unsigned char>(theta_y);  
+		}
+		p = pImage.ptr<unsigned char>(i);  
+		for( int j = 0; j < pImage.cols; j ++ ) {
+			if( countx == logr_x_unit ) {
+				countx = 0;
+			}else {
+				countx ++;
+			}
+			if( !countx ) {
+				logr_x ++;
+			}
+			if( p[j] > 0 ) {
+				to[logr_x] ++;
+			}
+		}
+	}
+	return result;
 }
 
-void recognize::load2( const char imageslist[][8] = NULL, int size = 0, bool conv_save = false ){
+void recognize::load2( const char imageslist[][8], int size = 0, bool conv_save = false ){
 	if( size != mNumOfCls*mNumOfSamples && size != 0 ) 
 		return;
+	mTrainData2 = Mat::zeros(Size(mNumOfSamples*mNumOfCls, SC_LOGR*SC_THETA*SC_MAX_CORNERS), CV_8UC1);
 	for(int i = 0; i < mNumOfCls; i++){
 		for(int j = 0; j < mNumOfSamples; j++){
 			vector<Point> corners;
 			Mat image = imread( imageslist[i*mNumOfSamples + j] ); 
-			goodFeaturesToTrack( image, corners, 1, 0.01, 10, Mat(), 3, false, 0.04 );
+			goodFeaturesToTrack( image, corners, SC_MAX_CORNERS, 0.01, 10, Mat(), 3, false, 0.04 );
 			for( int k = 0; k < corners.size(); k++ ) {
-				toPolar(image, corners[k].x, corners[k].y, CV_WARP_FILL_OUTLIERS );
+				Mat result = toPolar(image, corners[k].x, corners[k].y, CV_WARP_FILL_OUTLIERS );
+				result.reshape(0, 1);
+				result.copyTo( mTrainData2.row(i*mNumOfSamples+j).col(SC_LOGR*SC_THETA*k) );
 			}
 		}
 	}
@@ -167,6 +203,18 @@ void recognize::prepare(){
 	//if( mKNN ) {
 	//	mKNN->save();
 	//}
+}
+void recognize::prepare() {
+	CvMat cls, dat;
+	IplImage* img;
+	for(int i = 0; i < mNumOfCls; i++){
+		for(int j = 0; j< mNumOfSamples; j++){
+			// Set class label
+			cls = mTrainClasses2.row(i*mNumOfSamples + j );
+			cvSet(&cls, cvRealScalar(i));
+		}
+	}
+	mKNN2 = new CvKNearest( mTrainData, mTrainClasses, 0, false, K );
 }
 int recognize::classify(IplImage* img){
 	CvMat dat;
