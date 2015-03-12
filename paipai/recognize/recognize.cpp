@@ -4,6 +4,8 @@
 #include <fstream>
 #include "recognize.h"
 #include "dat.h"
+#include "thinner.h"
+
 #define BORDER 1
 #define DEF_WIDTH 14
 #define DEF_HEGITH 21
@@ -61,6 +63,31 @@ string i2a(int x) {
 	if (o << x)
 		return o.str();
 	return "";
+}
+
+Mat toPolar(Mat image , int centerx, int centery, int m)
+{
+     if(image.empty())
+         return image;
+     cv::Mat pImage = cv::Mat::zeros(image.size(), CV_8UC1);
+     IplImage ipl_a = image, ipl_pa = pImage;
+     cvLogPolar(&ipl_a, &ipl_pa, cvPoint2D32f(centerx, centery), m);
+     return pImage;
+}
+
+void recognize::load2( const char imageslist[][8] = NULL, int size = 0, bool conv_save = false ){
+	if( size != mNumOfCls*mNumOfSamples && size != 0 ) 
+		return;
+	for(int i = 0; i < mNumOfCls; i++){
+		for(int j = 0; j < mNumOfSamples; j++){
+			vector<Point> corners;
+			Mat image = imread( imageslist[i*mNumOfSamples + j] ); 
+			goodFeaturesToTrack( image, corners, 1, 0.01, 10, Mat(), 3, false, 0.04 );
+			for( int k = 0; k < corners.size(); k++ ) {
+				toPolar(image, corners[k].x, corners[k].y, CV_WARP_FILL_OUTLIERS );
+			}
+		}
+	}
 }
 
 void recognize::load( const char imageslist[][8], int size, bool conv_save ){
@@ -403,17 +430,30 @@ int filterErode( const Mat& input, Mat& output,  vector<Rect>& bounds ) {
 	
 }
 
+int filterShape( const Mat& input, Mat& output,  vector<Rect>& bounds ) {
+	Mat gray, binary;
+	cvtColor(input, gray, CV_BGR2GRAY); 
+	threshold(gray, binary, 0, 255, CV_THRESH_BINARY_INV | CV_THRESH_OTSU);
+	imwrite( "binary.jpg", binary ); 
+
+	imwrite( "thin.jpg", binary ); 
+
+	return 0;
+}
+
 const char* recognize::identify(IplImage* img) {
 	vector<Piece> result;
 
 	/////////split////////
 	Mat input(img, 0), output;
 	vector<Rect> boundRect;
-	if( !filterChanales( input, output, 0, boundRect ) ) 
-		if( !filterChanales( input, output, 1, boundRect ) ) 
-			if( !filterChanales( input, output, 2, boundRect ) ) 
-				if( !filterErode( input, output, boundRect ) )
-					return NULL;
+	//if( !filterChanales( input, output, 0, boundRect ) ) 
+	//	if( !filterChanales( input, output, 1, boundRect ) ) 
+	//		if( !filterChanales( input, output, 2, boundRect ) ) 
+	//			if( !filterErode( input, output, boundRect ) )
+	//				return NULL;
+
+	filterShape(input, output, boundRect);
 	    
 	for (unsigned int i = 0; i < boundRect.size(); ++i) {    
 		//Scalar color = Scalar(0, 0, 0);/*bb outline*/      
