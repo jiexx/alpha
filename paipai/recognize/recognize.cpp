@@ -3,7 +3,7 @@
 #include "stdafx.h"
 #include <fstream>
 #include "recognize.h"
-#include "dat.h"
+
 
 #define BORDER 1
 #define DEF_WIDTH 14
@@ -11,16 +11,18 @@
 #define MAX_GUARD 100000
 #define SC_LOGR 5
 #define SC_THETA 12
-#define SC_MAX_CORNERS 5
+#define SC_MAX_CORNERS 6
 
-recognize::recognize(){
+recognize::recognize( int numofcls, int numofsamp ){
 	K = 1;
 	mNormSize = 32;
 	mKNN = NULL;
-	mNumOfCls = CLASSES;
-	mNumOfSamples = SAMPLES;
+	mNumOfCls = numofcls;
+	mNumOfSamples = numofsamp;
 	mTrainData = cvCreateMat( mNumOfSamples*mNumOfCls, mNormSize*mNormSize, CV_32FC1 );// rows, col, type
 	mTrainClasses = cvCreateMat( mNumOfSamples*mNumOfCls, 1, CV_32FC1 );
+	mTrainData2 = Mat::zeros(Size(mNumOfSamples*mNumOfCls, SC_LOGR*SC_THETA*SC_MAX_CORNERS), CV_32FC1);
+	mTrainClasses2 = Mat::zeros(Size(mNumOfSamples*mNumOfCls, 1), CV_32FC1);
 }
 recognize::~recognize(){
 	if( mArrImg ) {
@@ -76,9 +78,9 @@ Mat toPolar(Mat image , int centerx, int centery, int m)
 	IplImage ipl_a = image, ipl_pa = pImage;
 	cvLogPolar(&ipl_a, &ipl_pa, cvPoint2D32f(centerx, centery), m);
 	
-	int theta_y_unit = ceil(((float)pImage.rows)/SC_THETA), 
-		logr_x_unit = ceil(((float)pImage.cols)/SC_LOGR),
-		theta_y, logr_x, countx = 0, county = 0;
+	int theta_y_unit = (int)ceil(((float)pImage.rows)/SC_THETA), 
+		logr_x_unit = (int)ceil(((float)pImage.cols)/SC_LOGR),
+		theta_y = 0, logr_x = 0, countx = 0, county = 0;
 	unsigned char* p, *to;  
 	for( int i = 0; i < pImage.rows; i ++ ) {
 		if( county == theta_y_unit ) {
@@ -108,19 +110,42 @@ Mat toPolar(Mat image , int centerx, int centery, int m)
 	return result;
 }
 
-void recognize::load2( const char imageslist[][8], int size = 0, bool conv_save = false ){
+void recognize::load2( const char imageslist[][8], int size, bool conv_save ){
 	if( size != mNumOfCls*mNumOfSamples && size != 0 ) 
 		return;
-	mTrainData2 = Mat::zeros(Size(mNumOfSamples*mNumOfCls, SC_LOGR*SC_THETA*SC_MAX_CORNERS), CV_8UC1);
+	mArrImg = (IplImage**)new IplImage[mNumOfCls*mNumOfSamples*SC_MAX_CORNERS];
 	for(int i = 0; i < mNumOfCls; i++){
 		for(int j = 0; j < mNumOfSamples; j++){
 			vector<Point> corners;
-			Mat image = imread( imageslist[i*mNumOfSamples + j] ); 
+			Mat image = imread( imageslist[i*mNumOfSamples + j], CV_LOAD_IMAGE_GRAYSCALE ); 
 			goodFeaturesToTrack( image, corners, SC_MAX_CORNERS, 0.01, 10, Mat(), 3, false, 0.04 );
-			for( int k = 0; k < corners.size(); k++ ) {
+			
+			Mat conv = Mat::zeros(Size(image.rows, image.cols), CV_8UC3);
+			
+			for( int y = 0; y < conv.rows; y ++ ){
+				unsigned char* inp  = conv.ptr<unsigned char>(y);
+				for( int x = 0; x < conv.cols; x ++ ){
+					int v = image.at<uchar>(y,x);
+					if(  v > 0 ) {
+						*inp++ = 255;
+						*inp++ = 255 ;
+						*inp++ = 255;
+					}else {
+						inp++;
+						inp++;
+						inp++;
+					}
+				}
+			}
+			for( unsigned int l = 0; l < corners.size(); l++ ) {
+				circle( conv, corners[l], 2, Scalar(0, 0, 255));
+			}
+			imwrite("goodFeaturesToTrack.jpg", conv);
+
+			for( unsigned int k = 0; k < corners.size(); k++ ) {
 				Mat result = toPolar(image, corners[k].x, corners[k].y, CV_WARP_FILL_OUTLIERS );
-				result.reshape(0, 1);
-				result.copyTo( mTrainData2.row(i*mNumOfSamples+j).col(SC_LOGR*SC_THETA*k) );
+				mArrImg[(i*mNumOfSamples + j)*SC_MAX_CORNERS + k] = cvCloneImage(&(IplImage)image);
+				imwrite("mTrainData2.jpg", result);
 			}
 		}
 	}
@@ -188,11 +213,11 @@ void recognize::prepare(){
 			cvGetRow( mTrainData, &cls, i*mNumOfSamples + j);
 			//IplImage* ipl = cvCreateImage( cvSize( mNormSize, mNormSize ), IPL_DEPTH_32F, 1 );
 			//cvConvertScale(img, ipl, 1, 0);
+
 			cvGetSubRect( img, &dat, cvRect(0,0,mNormSize,mNormSize) );
-
-
 			CvMat row_header, *row1;
 			row1 = cvReshape( &dat, &row_header, 0, 1 );
+
 			cvCopy(row1, &cls, NULL);
 
 		}
@@ -204,17 +229,27 @@ void recognize::prepare(){
 	//	mKNN->save();
 	//}
 }
-void recognize::prepare() {
-	CvMat cls, dat;
+void recognize::prepare2() {
+	Mat cls;
 	IplImage* img;
 	for(int i = 0; i < mNumOfCls; i++){
 		for(int j = 0; j< mNumOfSamples; j++){
-			// Set class label
-			cls = mTrainClasses2.row(i*mNumOfSamples + j );
-			cvSet(&cls, cvRealScalar(i));
+
+			for( int k = 0; k < SC_MAX_CORNERS; k++ ) {
+				// Set class label
+				cls = mTrainClasses2.row(i*mNumOfSamples + j );
+				cvSet(&cls, cvRealScalar(i));
+
+				img = preprocessing(mArrImg[(i*mNumOfSamples + j)*SC_MAX_CORNERS + k]);
+
+				cls = Mat(img);
+
+				cls.reshape(0, 1);
+				cls.copyTo( mTrainData2.row((i*mNumOfSamples + j)*SC_MAX_CORNERS + k).col(SC_LOGR*SC_THETA*k) );
+			}
 		}
 	}
-	mKNN2 = new CvKNearest( mTrainData, mTrainClasses, 0, false, K );
+	mKNN2 = new CvKNearest( mTrainData2, mTrainClasses2, Mat(), false, K );
 }
 int recognize::classify(IplImage* img){
 	CvMat dat;

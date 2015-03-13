@@ -5,6 +5,7 @@
 #include "highgui.h"
 #include "ml/ml.hpp"
 #include "windows.h"
+#include "dat.h"
 
 using namespace cv;
 using namespace std;
@@ -19,7 +20,7 @@ struct Piece{
 class recognize
 {
 public:
-	recognize();
+	recognize( int numofcls = CLASSES, int numofsamp = SAMPLES );
 	~recognize();
 	void load( const char imageslist[][8] = NULL, int size = 0, bool conv_save = false );
 	void load2( const char imageslist[][8] = NULL, int size = 0, bool conv_save = false );
@@ -36,7 +37,7 @@ protected:
 	CvKNearest* mKNN;
 	CvMat* mTrainClasses;
 	CvMat* mTrainData;
-	CKNearest* mKNN2;
+	CvKNearest* mKNN2;
 	Mat mTrainClasses2;
 	Mat mTrainData2;
 	int mNormSize;
