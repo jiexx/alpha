@@ -82,11 +82,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dat.h" />
+    <ClInclude Include="loader.h" />
     <ClInclude Include="recognize.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Stdafx.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="loader.cpp" />
     <ClCompile Include="recognize.cpp" />
     <ClCompile Include="Stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
