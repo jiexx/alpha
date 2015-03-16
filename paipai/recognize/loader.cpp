@@ -1,5 +1,7 @@
 #include "stdafx.h"
 #include "loader.h"
+#include "rectangle.h"
+#include "file.h"
 
 #define FONT_HEIGHT 32
 #define FONT_WIDTH  32
@@ -16,18 +18,18 @@ loader::loader() {
 
 loader::~loader(){
 	int i;
-	for( i = 0 ; i < mFontCols.size() ; i ++ ) {
-		HFONT hfont = mFontCols.at(i).font;
+	for( i = 0 ; i < mFontRows.size() ; i ++ ) {
+		HFONT hfont = mFontRows.at(i).font;
 		DeleteObject(hfont);
 	}
-	mFontCols.clear();
-	map<wchar_t, vector<Mat&>*>::iterator it;
-	for( it = mCharMatTable.begin() ; it != mCharMatTable.end() ; it ++ ) {
+	mFontRows.clear();
+	map<wstring, vector<Mat&>*>::iterator it;
+	for( it = mFontCharTable.begin() ; it != mFontCharTable.end() ; it ++ ) {
 		vector<Mat&>* val = it->second;
 		if(val)
 			delete val;
 	}
-	mCharMatTable.clear();
+	mFontCharTable.clear();
 }
 
 void loader::addFont( const wchar_t* file, const wchar_t* fontname ){
@@ -49,28 +51,26 @@ void loader::addFont( const wchar_t* file, const wchar_t* fontname ){
 		lf.lfPitchAndFamily = 0;   
 		wcscpy(lf.lfFaceName, fontname); // 这里就是字体名   
 		HFONT hfont = CreateFontIndirect(&lf);  
-		mFontCols.push_back( FontDesc(fontname, hfont) );
+		mFontRows.push_back( FontDesc(fontname, hfont) );
 	}  
 }
 
 void loader::addChar( const wchar_t* str ){
 	int len = wcslen(str);
 	for( int i = 0 ; i < len ; i ++ ) {
-		vector<Mat&>* p = new vector<Mat&>();
-		if( p ) 
-			mCharMatTable[str[i]] =  p;
+		mCharCols.push_back( str[i] );
 	}
 }
 
-int loader::getCountOfChars() const{
-	return mCharMatTable.size();
+int loader::getCountOfFonts() const{
+	return mFontRows.size();
 }
 
-vector<Mat&>* loader::getCharsMatSet( int index ){
-	map<wchar_t, vector<Mat&>*>::iterator it = mCharMatTable.end();
-	for( it = mCharMatTable.begin() ; it != mCharMatTable.end() && index != 0; it ++ )
+vector<Mat&>* loader::getFontCharSet( int index ){
+	map<wstring, vector<Mat&>*>::iterator it = mFontCharTable.end();
+	for( it = mFontCharTable.begin() ; it != mFontCharTable.end() && index != 0; it ++ )
 		index --;
-	if( it == mCharMatTable.end() )
+	if( it == mFontCharTable.end() )
 		return 0;
 	return it->second;
 }
@@ -110,12 +110,18 @@ Mat& loader::getMat( HDC hdc, HBITMAP hbmp, HANDLE hDib ){
 
 		GetDIBits(hdc, hbmp, 0, bmp.bmHeight, (BYTE*)lpbi + sizeof(BITMAPINFOHEADER), (BITMAPINFO*)lpbi, DIB_RGB_COLORS);  
 
-		Mat img = Mat::zeros(bmp.bmHeight, bmp.bmWidth, CV_32FC1);
-		memcpy(img.data, (BYTE*)lpbi + sizeof(BITMAPINFOHEADER), img.total());
+		Mat img = Mat::zeros(bmp.bmHeight, bmp.bmWidth, CV_8UC3);
+		memcpy(img.data, (BYTE*)lpbi + sizeof(BITMAPINFOHEADER), img.total()*img.elemSize());
 	GlobalUnlock(hDib);  
 	return img;
 }
-void loader::splitMat( Mat& m ){
+void loader::splitMat( const wchar_t* fontname, Mat& m ){
+	rects r;
+	vector<Mat&>* mats = r.getNormalMats(m);
+	m.release();
+	if( mats && mats->size() == mCharCols.size() ) {
+		mFontCharTable[wstring(fontname)] = mats;  //still CV_8UC3
+	}
 }
 
 void loader::handle(){
@@ -123,7 +129,7 @@ void loader::handle(){
 	HDC hdc = CreateCompatibleDC(dc0);
 
 	BYTE *pbase;
-	int len = getCountOfChars();
+	int len = getCountOfFonts();
 	BITMAPINFO bmpinfo;
 	memset(&bmpinfo.bmiHeader, 0, sizeof(BITMAPINFOHEADER));
 	bmpinfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
@@ -137,18 +143,53 @@ void loader::handle(){
 	DWORD dwSize = ((FONT_WIDTH * len * 24 + 31) / 32) * 4 * FONT_HEIGHT;  
 	HANDLE hDib = GlobalAlloc(GHND, dwSize + sizeof(BITMAPINFOHEADER));  
 
-	for( int i = 0 ; i < mFontCols.size() ; i ++ ) {
-		HFONT hfont = mFontCols[i].font;
+	for( int i = 0 ; i < mFontRows.size() ; i ++ ) {
+		HFONT hfont = mFontRows[i].font;
 		clear( hdc, hbmp );
-		map<wchar_t, vector<Mat&>*>::iterator it;
 		int pos = 0;
-		for( it = mCharMatTable.begin() ; it != mCharMatTable.end() ; it ++ ) {
-			draw( hdc, hfont, hbmp, it->first, pos+2, 2 );
+		for( int j = 0 ; j < mCharCols.size() ; j ++ ) {
+			draw( hdc, hfont, hbmp, mCharCols[i], pos+2, 2 );
 			pos += FONT_WIDTH;
 		}
-		splitMat( getMat( hdc, hbmp, hDib ) );
+		splitMat( mFontRows[i].name, getMat( hdc, hbmp, hDib ) );
 	}
 	GlobalFree(hDib);  
 	DeleteObject(hbmp);
 	ReleaseDC(0,hdc);
+}
+
+void loader::saveBinary() {
+	map<wstring, vector<Mat&>*>::iterator it;
+	int i = 0, j = 0;
+	for( it = mFontCharTable.begin() ; it != mFontCharTable.end() ; it ++ ) {
+		vector<Mat&>* img = it->second;
+		if( img ) {
+			vector<Mat&>& r = *img;
+			for( j = 0 ; j < img->size(); j ++ ) {
+				stringstream si, sj;
+				si << i;
+				sj << j;
+				binary bf( (si.str()+sj.str()+string(".bin")).c_str() );
+				vector<unsigned char> buf;
+				buf = Mat_<Point3i>(r[j]);
+				bf.save( buf );
+			}
+		}
+	}
+}
+void loader::saveImage() {
+	map<wstring, vector<Mat&>*>::iterator it;
+	int i = 0, j = 0;
+	for( it = mFontCharTable.begin() ; it != mFontCharTable.end() ; it ++ ) {
+		vector<Mat&>* img = it->second;
+		if( img ) {
+			vector<Mat&>& r = *img;
+			for( j = 0 ; j < img->size(); j ++ ) {
+				stringstream si, sj;
+				si << i;
+				sj << j;
+				imwrite( (si.str()+sj.str()+string(".png")).c_str(), r[j] );
+			}
+		}
+	}
 }

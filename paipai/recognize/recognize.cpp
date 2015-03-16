@@ -3,6 +3,7 @@
 #include "stdafx.h"
 #include <fstream>
 #include "recognize.h"
+#include "file.h"
 
 
 #define BORDER 1
@@ -50,16 +51,6 @@ void write( const char* f, vector<unsigned char>& v ) {
 		of << str;
 	}
 	of << '\n';
-}
-void read( const char* in, vector<unsigned char>& v ) {
-	int len = strlen(in);
-	unsigned int h, l;
-	for ( int i = 0; i < len; i ++ ) {
-		h = in[i] < 'a' ?  in[i]-'0' : in[i]-'a'+10;
-		i++;
-		l = in[i] < 'a' ?  in[i]-'0' : in[i]-'a'+10;
-		v.push_back( (h<<4)+l );
-	}
 }
 
 string i2a(int x) {
@@ -159,8 +150,8 @@ void recognize::load( const char imageslist[][8], int size, bool conv_save ){
 	for(int i = 0; i < mNumOfCls; i++){
 		for(int j = 0; j< mNumOfSamples; j++){
 			if( dat != NULL ) {
-				vector<unsigned char> data/*(str, str+strlen(str))*/;
-				read(dat[i*mNumOfSamples + j], data);
+				binary bin;
+				vector<unsigned char>& data = bin.read(dat[i*mNumOfSamples + j]);
 				Mat image = imdecode(Mat(data), CV_LOAD_IMAGE_GRAYSCALE );
 				//ofstream os(i2a(i)+i2a(j)+".png",ios_base::binary|ios_base::out);
 				//for ( vector<unsigned char>::iterator itr=data.begin(); itr!=data.end(); itr++ ) {

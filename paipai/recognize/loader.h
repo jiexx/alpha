@@ -159,13 +159,15 @@ public:
 	void addFont( const wchar_t* file, const wchar_t* font );
 	void addChar( const wchar_t* str );
 
-	int getCountOfChars() const;
-	vector<Mat&>* getCharsMatSet( int index );
+	int getCountOfFonts() const;
+	vector<Mat&>* getFontCharSet( int index );
+	void saveBinary();
+	void saveImage();
 protected:
 	void clear( HDC hdc, HBITMAP hbmp );
 	void draw( HDC hdc, HFONT hfont, HBITMAP hbmp, const wchar_t c, int x, int y );
 	Mat& getMat( HDC hdc, HBITMAP bmp, HANDLE hDib );
-	void splitMat( Mat& m );
+	void splitMat( const wchar_t* fontname, Mat& m );
 	void handle();
 private:
 	typedef struct FontDesc {
@@ -174,10 +176,12 @@ private:
 		HFONT font;
 		FontDesc( const wchar_t* desc, HFONT f )
 			:font(f){ wmemset(name, 0, LF_FACESIZE ); wcscpy( name, desc );  }
-	}FontCols;
-	typedef vector<FontCols> FontCol;
-	FontCol mFontCols;
-	map<wchar_t, vector<Mat&>*> mCharMatTable;
+	}FontRows;
+	typedef vector<wchar_t> Col;
+	typedef vector<FontRows> Row;
+	Row mFontRows;
+	Col mCharCols;
+	map<wstring, vector<Mat&>*> mFontCharTable;//font - mat(0,1,2...)
 	HBRUSH mClearBrush;
 
 };
