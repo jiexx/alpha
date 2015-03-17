@@ -81,6 +81,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="classifier.h" />
     <ClInclude Include="dat.h" />
     <ClInclude Include="loader.h" />
     <ClInclude Include="recognize.h" />

@@ -3,14 +3,6 @@
 #include "rectangle.h"
 #include "file.h"
 
-#define FONT_HEIGHT 32
-#define FONT_WIDTH  32
-#define FONT_COUNT 2
-
-const wchar_t g_font[FONT_COUNT][8] = {
-	{L"宋体"},
-	{L"华文彩云"},
-};
 
 loader::loader() {
 	mClearBrush = CreateSolidBrush(RGB(0,0,0)); 
@@ -56,7 +48,7 @@ void loader::addFont( const wchar_t* file, const wchar_t* fontname ){
 		lf.lfClipPrecision = CLIP_STROKE_PRECIS;  
 		lf.lfQuality = ANTIALIASED_QUALITY;  
 		lf.lfPitchAndFamily = DEFAULT_PITCH | FF_DONTCARE;   
-		wcscpy(lf.lfFaceName, fontname); // 这里就是字体名   
+		wcscpy_s(lf.lfFaceName, fontname); // 这里就是字体名   
 		HFONT hfont = CreateFontIndirect(&lf);  
 		mFontRows.push_back( FontRows(fontname, hfont) );
 	}  
@@ -69,17 +61,14 @@ void loader::addChar( const wchar_t* str ){
 	}
 }
 
-int loader::getCountOfFonts() const{
-	return mFontRows.size();
-}
-
 vector<Mat*>* loader::getFontCharSet( int index ){
-	map<wstring, vector<Mat*>*>::iterator it = mFontCharTable.end();
+	/*map<wstring, vector<Mat*>*>::iterator it = mFontCharTable.end();
 	for( it = mFontCharTable.begin() ; it != mFontCharTable.end() && index != 0; it ++ )
 		index --;
 	if( it == mFontCharTable.end() )
 		return 0;
-	return it->second;
+	return it->second;*/
+	return mFontCharTable[index];
 }
 
 void loader::clear( HDC hdc, HBITMAP hbmp ){
@@ -128,13 +117,13 @@ Mat* loader::getMat( HDC hdc, HBITMAP hbmp, HANDLE hDib ){
 void loader::splitMat( const wchar_t* fontname, Mat* m ){
 	rects r;
 	if( m ) {
-		vector<Mat*>* mats = r.getNormalMats(*m);
+		vector<Mat*>* mats = r.getThinMats(*m); // to CV_8UC1
 		imwrite("getNormalMats.png", *m);
 		m->release();
 		delete m;
 
 		if( mats && mats->size() == mCharCols.size() ) {
-			mFontCharTable[wstring(fontname)] = mats;  //still CV_8UC3
+			mFontCharTable.push_back(mats);  //   CV_8UC3 to CV_8UC1
 		}
 	}
 }
@@ -148,14 +137,14 @@ void loader::handle(){
 	BITMAPINFO bmpinfo;
 	memset(&bmpinfo.bmiHeader, 0, sizeof(BITMAPINFOHEADER));
 	bmpinfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	bmpinfo.bmiHeader.biWidth = FONT_WIDTH * len;
-	bmpinfo.bmiHeader.biHeight = FONT_HEIGHT;
+	bmpinfo.bmiHeader.biWidth = W * len;
+	bmpinfo.bmiHeader.biHeight = H;
 	bmpinfo.bmiHeader.biPlanes = 1;
 	bmpinfo.bmiHeader.biBitCount = 24;
 	HBITMAP hbmp = CreateDIBSection( hdc, &bmpinfo, DIB_RGB_COLORS,(void**)&pbase, 0, 0 );
 	HBITMAP old = (HBITMAP)SelectObject( hdc, hbmp );
 
-	DWORD dwSize = ((FONT_WIDTH * len * 24 + 31) / 32) * 4 * FONT_HEIGHT;  
+	DWORD dwSize = ((W * len * 24 + 31) / 32) * 4 * H;  
 	HANDLE hDib = GlobalAlloc(GHND, dwSize + sizeof(BITMAPINFOHEADER));  
 
 	for( unsigned int i = 0 ; i < mFontRows.size() ; i ++ ) {
@@ -164,7 +153,7 @@ void loader::handle(){
 		int pos = 0;
 		for( unsigned int j = 0 ; j < mCharCols.size() ; j ++ ) {
 			draw( hdc, hfont, hbmp, mCharCols[j], pos, 0 );
-			pos += FONT_WIDTH + 20;
+			pos += W + 20;
 		}
 		splitMat( mFontRows[i].name, getMat( hdc, hbmp, hDib ) );
 	}
@@ -174,10 +163,10 @@ void loader::handle(){
 }
 
 void loader::saveBinary() {
-	map<wstring, vector<Mat*>*>::iterator it;
+	vector<vector<Mat*>*>::iterator it;
 	unsigned int i = 0, j = 0;
 	for( it = mFontCharTable.begin() ; it != mFontCharTable.end() ; it ++ ) {
-		vector<Mat*>* img = it->second;
+		vector<Mat*>* img = *it;
 		if( img ) {
 			for( j = 0 ; j < img->size(); j ++ ) {
 				stringstream si, sj;
@@ -192,10 +181,10 @@ void loader::saveBinary() {
 	}
 }
 void loader::saveImage() {
-	map<wstring, vector<Mat*>*>::iterator it;
+	vector<vector<Mat*>*>::iterator it;
 	unsigned int i = 0, j = 0;
 	for( it = mFontCharTable.begin() ; it != mFontCharTable.end() ; it ++, i ++ ) {
-		vector<Mat*>* img = it->second;
+		vector<Mat*>* img = *it;
 		if( img ) {
 			for( j = 0 ; j < img->size(); j ++ ) {
 				stringstream si, sj;

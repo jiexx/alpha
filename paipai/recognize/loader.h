@@ -19,7 +19,12 @@ public:
 	void addFont( const wchar_t* file, const wchar_t* font );
 	void addChar( const wchar_t* str );
 
-	int getCountOfFonts() const;
+	inline int getCountOfFonts() const{
+		return mFontRows.size();
+	};
+	inline int getCountOfChars() const{
+		return mCharCols.size();
+	}
 	vector<Mat*>* getFontCharSet( int index );
 	void saveBinary();
 	void saveImage();
@@ -35,13 +40,13 @@ private:
 		wchar_t name[LF_FACESIZE];
 		HFONT font;
 		FontRows( const wchar_t* desc, HFONT f )
-			:font(f){ wmemset(name, 0, LF_FACESIZE ); wcscpy( name, desc );  }
+			:font(f){ wmemset(name, 0, LF_FACESIZE ); wcscpy_s( name, desc );  }
 	};
 	typedef vector<wchar_t> Col;
 	typedef vector<FontRows> Row;
 	Row mFontRows;
 	Col mCharCols;
-	map<wstring, vector<Mat*>*> mFontCharTable;//font - mat(0,1,2...)
+	vector<vector<Mat*>*> mFontCharTable;//font - mat(0,1,2...)
 	HBRUSH mClearBrush;
 
 };
