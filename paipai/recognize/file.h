@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "windows.h"
 #include "cv.h"
 #include "highgui.h"

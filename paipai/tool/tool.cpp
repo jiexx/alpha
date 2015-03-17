@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "recognize.h"
+#include "loader.h"
 
 int _tmain(int argc, _TCHAR* argv[])
 {
@@ -31,6 +32,14 @@ int _tmain(int argc, _TCHAR* argv[])
 		{"8.png"},
 		{"9.png"},
 	};
+	loader lo;
+	lo.addFont(L"华文彩云.ttf",L"华文彩云");
+	lo.addFont(L"微软vista宋体.ttf",L"SimSun-ExtB");
+	lo.addChar(L"0123456789");
+	lo.handle();
+	lo.getFontCharSet(0);
+	lo.saveImage();
+
 	reco.load2(imglist2,10,true);
 	reco.prepare2();
 	const char f[4][18] = {"test.png","test1.png","test2.png","test3.png"};

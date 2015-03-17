@@ -3,6 +3,7 @@
 #include "stdafx.h"
 #include <fstream>
 #include "recognize.h"
+#include "rectangle.h"
 #include "file.h"
 
 
@@ -421,10 +422,6 @@ Rect mergeRects( const Rect& a, const Rect& b ) {
 	return mergeRects(r);
 }
 
-
-bool sort_rect(const Rect &v1, const Rect &v2){
-	return v1.x < v2.x;
-}
 
 int getBoundRect( vector<vector<Point>>& contours, vector<Rect>& output ) {
 	vector<Rect> boundRect;
