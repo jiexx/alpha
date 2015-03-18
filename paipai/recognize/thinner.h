@@ -13,6 +13,7 @@ using namespace cv;
 #ifndef __THINNER_H__
 #define __THINNER_H__
 
+
 /**
 * Perform one thinning iteration.
 * Normally you wouldn't call this function directly from your code.
@@ -74,6 +75,21 @@ inline void thinning(Mat& im)
 	while (countNonZero(diff) > 0);
 
 	im *= 255;
+}
+
+inline void adjustThinning(Mat& in, Mat& out, int width, int height ) {
+	
+	if( in.channels() > 1 ) {
+		cvtColor(in, in, CV_BGR2GRAY);
+		threshold(in, in, 0, 255, CV_THRESH_BINARY);
+	}
+	Mat ss = Mat::zeros(width-2, height-2, in.type());
+	resize( in, ss, Size(width-2, height-2), 0, 0 );
+	out = 0;
+	Mat roi(out, Rect(1, 1, width-2, height-2));
+	ss.copyTo(roi);
+
+	thinning(out);
 }
 
 #endif

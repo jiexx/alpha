@@ -114,28 +114,19 @@ public:
 		}
 		return out;
 	}
-	inline vector<Mat*>* getThinMats( Mat& m ) {
+	inline vector<Mat*>* getThinMats( Mat& m ) {  // only used for loader
 		getNormalRects( m );
 
 		vector<Mat*>* out = new vector<Mat*>();
 
 		for (unsigned int i = 0; i < mRects.size(); ++i) {
 			Rect& r = mRects[i];
-			r.x --;
-			r.y --;
-			r.width += 2;
-			r.height += 2;
 			Mat roi(m, r);
 
 			Mat* o = new Mat(((int)W), ((int) H), CV_8UC1);
 			if( o ) {
-				Mat unit = Mat::zeros(((int)W), ((int) H), m.type());
-				resize( roi, unit, Size(W,H), 0, 0 );
 
-				cvtColor( unit, *o, CV_BGR2GRAY);
-				threshold(*o, *o, 0, 255, CV_THRESH_BINARY);
-
-				thinning(*o);
+				adjustThinning(roi, *o, W, H);
 
 				if( out )
 					out->push_back(o);
