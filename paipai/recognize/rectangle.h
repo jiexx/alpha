@@ -71,13 +71,19 @@ public:
 			}
 		}
 		mRects.clear();
-		copy( mRects.begin(), mRects.end(), back_inserter(splits) );
+		for( unsigned int i = 0; i < splits.size(); ++i ) {
+			mRects.push_back( splits[i] );
+		}
 		return mRects;
 	}
 	inline vector<Rect>& getNormalRects( Mat& m ) {
+		mRects.clear();
 		vector< vector< Point> > contours;
 		Mat mat;
-		cvtColor( m, mat, CV_BGR2GRAY);
+		if( m.channels() != 1 ) 
+			cvtColor( m, mat, CV_BGR2GRAY);
+		else 
+			m.copyTo(mat);
 		findContours(mat, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
 
 		for (unsigned int i = 0; i < contours.size(); ++i) {      
@@ -130,7 +136,7 @@ public:
 				threshold(*o, *o, 0, 255, CV_THRESH_BINARY);
 
 				thinning(*o);
-			
+
 				if( out )
 					out->push_back(o);
 			}

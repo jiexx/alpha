@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "recognize.h"
 #include "loader.h"
+#include "classifier.h"
 
 int _tmain(int argc, _TCHAR* argv[])
 {
@@ -39,6 +40,18 @@ int _tmain(int argc, _TCHAR* argv[])
 	lo.handle();
 	lo.getFontCharSet(0);
 	lo.saveImage();
+
+	classifier clsr;
+	CvKNearest* knn = clsr.getKNN( lo );
+	vector<char> str;
+	if( knn ) {
+		Mat m = imread("test1.png");
+		Mat roi(m, Rect(1,1,m.cols-2,m.rows-2));
+		str = clsr.findByKNN( *knn, roi );
+		m = imread("test6.png");
+		Mat roi2(m, Rect(1,1,m.cols-2,m.rows-2));
+		str = clsr.findByKNN( *knn, roi2 );
+	}
 
 	reco.load2(imglist2,10,true);
 	reco.prepare2();

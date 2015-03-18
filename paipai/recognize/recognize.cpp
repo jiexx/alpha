@@ -236,7 +236,7 @@ void recognize::prepare2() {
 
 				cls = Mat(img);
 
-				cls.reshape(0, 1);
+				cls = cls.reshape(0, 1);
 				cls.copyTo( mTrainData2.row((i*mNumOfSamples + j)*SC_MAX_CORNERS + k).col(SC_LOGR*SC_THETA*k) );
 			}
 		}

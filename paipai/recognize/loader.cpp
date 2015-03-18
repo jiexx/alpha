@@ -15,9 +15,9 @@ loader::~loader(){
 		DeleteObject(hfont);
 	}
 	mFontRows.clear();
-	map<wstring, vector<Mat*>*>::iterator it;
+	vector<vector<Mat*>*>::iterator it;
 	for( it = mFontCharTable.begin() ; it != mFontCharTable.end() ; it ++ ) {
-		vector<Mat*>* val = it->second;
+		vector<Mat*>* val = *it;
 		if(val) {
 			for( unsigned int i = 0 ; i < val->size() ; i ++ ) {
 				Mat* m = (*val)[i];
