@@ -6,6 +6,7 @@
 #include "vector"
 #include "loader.h"
 #include "rectangle.h"
+#include "portrait.h"
 
 using namespace std;
 using namespace cv;
@@ -24,11 +25,11 @@ public:
 	inline svmWrapper(const Mat& tra, const Mat& cls){
 		CvSVMParams mParams;
 		mParams.svm_type    = CvSVM::C_SVC;
-		mParams.kernel_type = CvSVM::RBF ;
+		mParams.kernel_type = CvSVM::LINEAR ;
 		mParams.degree      = 10;
-		mParams.gamma       = 8;
+		mParams.gamma       = 5.383;
 		mParams.coef0       = 1;
-		mParams.C           = 10;
+		mParams.C           = 2.67;
 		mParams.nu          = 0.5;
 		mParams.p           = 0.1;
 		mParams.term_crit   = cvTermCriteria(CV_TERMCRIT_EPS, 1000,  FLT_EPSILON);
@@ -97,13 +98,47 @@ public:
 					Mat* c = (*f)[i];
 					if( c ) {
 						Mat m;
-						c->convertTo(m, CV_32FC1);
+						c->convertTo(m, CV_32FC1, 1.0f/255.0f);
 						m = m.reshape(0, 1);
 						m.copyTo( tra.row( i*samples + j ) );
 					}
 				}
 			}
 		}
+		return new svmWrapper( tra, cls );
+	}
+	inline wrapper* getSC( loader& l, int radius ) {
+		if( l.type() != ORIGIN )
+			return 0;
+		int fonts = l.getCountOfFonts();
+		int chars = l.getCountOfChars();
+
+		Vector<float> lables;
+		Vector<bin> samples;
+		portrait    potr(radius);
+		
+		for( int i = 0 ; i < chars ; i ++ ) { // chars
+			for( int j = 0 ; j < fonts ; j ++ ) { //font
+				lables.push_back( i );
+				vector<Mat*>* f = l.getFontCharSet(j);
+				if( f ) {
+					Mat* c = (*f)[i];
+					if( c ) {
+						Mat m;
+						c->convertTo(m, CV_32FC1);
+						vector<bin>& b = potr.getPortrait(m);
+						for( int k = 0 ; k < b.size() ; k ++ ) {
+							samples.push_back(b[i]);
+						}
+					}
+				}
+			}
+		}
+
+
+		Mat cls( lables.size(), 1, CV_32FC1, lables.begin() );
+		Mat tra( samples.size(), BIN_THETA*BIN_R, CV_32FC1, samples.begin() );
+		
 		return new svmWrapper( tra, cls );
 	}
 	inline void byChanales( const Mat& img, int bgr, Mat& out ) {
@@ -148,35 +183,45 @@ public:
 		}
 		return out;
 	}
+	inline const vector<char> findBySC( wrapper& wp, Mat& img, int radius ) {
+		portrait    potr(radius);
+
+		vector<bin>& b = potr.getPortrait(img);
+		for( int i = 0 ; i < b.size() ; i ++ ) {
+			Mat row( b[i].size(), 1, CV_32FC1, b[i].ptr() );
+			float result = wp.find(row);
+		}
+	}
 	inline const vector<char> findByKNN( wrapper& wp, Mat& img ) {
 		rects rs;
 		Mat m;
 
 		byChanales(img, 0, m);
-		imwrite("byChanales0.png",m);
 		vector<Rect>& r = rs.getNormalRects(m);
-		imwrite("getNormalRects0.png",m);
-		if( r.size() == 6 ) {
+		if( rs.isValidRects(r) ) {
 			return findByBondRects( wp, m, r );
 		}
 
 		byChanales(img, 1, m);
 		r = rs.getNormalRects(m);
-		if( r.size() == 6 ) {
+		if( rs.isValidRects(r) ) {
 			return findByBondRects( wp, m, r );
 		}
 
 		byChanales(img, 2, m);
+		imwrite("byChanales0.png",m);
 		r = rs.getNormalRects(m);
-		if( r.size() == 6 ) {
+		imwrite("getNormalRects0.png",m);
+		if( rs.isValidRects(r) ) {
 			return findByBondRects( wp, m, r );
 		}
 
 		byErode( img, m );
 		imwrite("byErode.png",m);
 		r = rs.getBoundRects(m);
-		imwrite("getBoundRects.png",m);
-		if( r.size() == 6 ) {
+		thinning(m);
+		imwrite("thinning.png",m);
+		if( rs.isValidRects(r) ) {
 			return findByBondRects( wp, m, r );
 		}
 	}

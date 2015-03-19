@@ -45,7 +45,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	wrapper* wpp = clsr.getSVM( lo );
 	vector<char> str;
 	if( wpp ) {
-		Mat m = imread("test1.png");
+		Mat m = imread("test6.png");
 		Mat roi(m, Rect(1,1,m.cols-2,m.rows-2));
 		str = clsr.findByKNN( *wpp, roi );
 		m = imread("test6.png");

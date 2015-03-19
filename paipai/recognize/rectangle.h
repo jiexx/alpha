@@ -21,6 +21,7 @@ enum RSIZE {
 	W = 32,
 	H = 32,
 	DW = 14,
+	DW0 = 3,
 };
 inline bool sort_rect(const Rect &v1, const Rect &v2) {
 	return v1.x < v2.x;
@@ -76,6 +77,22 @@ public:
 		}
 		return mRects;
 	}
+	inline bool isValidRects( vector<Rect>& r ) {
+		if( r.size() != 6 )
+			return false;
+		for( int i = 0 ; i < r.size() ; i ++ ) {
+			if( r[i].width <= DW0 ) 
+				return false;
+		}
+		return true;
+	}
+	inline void debugRects( vector<Rect>& r, Mat& m ){
+		for( unsigned int i = 0; i < r.size(); i ++ ) {
+			rectangle( m, r[i].tl(), r[i].br(), Scalar(128, 0, 0));
+		}
+		//imshow("debug",m);
+		imwrite("debug.png",m);
+	}
 	inline vector<Rect>& getNormalRects( Mat& m ) {
 		mRects.clear();
 		vector< vector< Point> > contours;
@@ -123,10 +140,30 @@ public:
 			Rect& r = mRects[i];
 			Mat roi(m, r);
 
-			Mat* o = new Mat(((int)W), ((int) H), CV_8UC1);
+			Mat* o = new Mat(((int)W), ((int) H), CV_32FC1);
 			if( o ) {
 
 				adjustThinning(roi, *o, W, H);
+
+				if( out )
+					out->push_back(o);
+			}
+		}
+		return out;
+	}
+	inline vector<Mat*>* getOriMats( Mat& m ) {  // only used for loader
+		getNormalRects( m );
+
+		vector<Mat*>* out = new vector<Mat*>();
+
+		for (unsigned int i = 0; i < mRects.size(); ++i) {
+			Rect& r = mRects[i];
+			Mat roi(m, r);
+
+			Mat* o = new Mat(roi.cols, roi.rows, CV_32FC1);
+			if( o ) {
+
+				roi.copyTo( *o );
 
 				if( out )
 					out->push_back(o);

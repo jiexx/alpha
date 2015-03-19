@@ -117,7 +117,14 @@ Mat* loader::getMat( HDC hdc, HBITMAP hbmp, HANDLE hDib ){
 void loader::splitMat( const wchar_t* fontname, Mat* m ){
 	rects r;
 	if( m ) {
-		vector<Mat*>* mats = r.getThinMats(*m); // to CV_8UC1
+		vector<Mat*>* mats;
+		switch( mHt ) {
+		case RESIZE:
+			mats = r.getThinMats(*m); // to CV_8UC1
+		case ORIGIN:
+			mats = r.getOriMats(*m);
+		};
+
 		imwrite("getNormalMats.png", *m);
 		m->release();
 		delete m;
@@ -128,7 +135,8 @@ void loader::splitMat( const wchar_t* fontname, Mat* m ){
 	}
 }
 
-void loader::handle(){
+void loader::handle( HANDLER_TYPE ht ){
+	mHt = ht;
 	HDC dc0 = GetDC(0);
 	HDC hdc = CreateCompatibleDC(dc0);
 

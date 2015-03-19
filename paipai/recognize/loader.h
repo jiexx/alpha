@@ -11,6 +11,11 @@ using namespace cv;
 #ifndef __LOADER_H__
 #define __LOADER_H__
 
+enum HANDLER_TYPE{
+	RESIZE,
+	ORIGIN,
+	THINNING,
+};
 
 class loader {
 public:
@@ -28,7 +33,10 @@ public:
 	vector<Mat*>* getFontCharSet( int index );
 	void saveBinary();
 	void saveImage();
-	void handle();
+	void handle( HANDLER_TYPE ht = RESIZE );
+	inline HANDLER_TYPE type() const {
+		return mHt;
+	}
 protected:
 	void clear( HDC hdc, HBITMAP hbmp );
 	void draw( HDC hdc, HFONT hfont, HBITMAP hbmp, const wchar_t c, int x, int y );
@@ -48,6 +56,7 @@ private:
 	Col mCharCols;
 	vector<vector<Mat*>*> mFontCharTable;//font - mat(0,1,2...)
 	HBRUSH mClearBrush;
+	HANDLER_TYPE mHt;
 
 };
 

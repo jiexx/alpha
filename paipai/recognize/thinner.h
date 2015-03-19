@@ -76,13 +76,17 @@ inline void thinning(Mat& im)
 
 	im *= 255;
 }
-
-inline void adjustThinning(Mat& in, Mat& out, int width, int height ) {
+/* in CV_8UC1
+ * out 
+ */
+inline void adjustThinning(Mat& in, Mat& out, int width, int height ) { 
 	
 	if( in.channels() > 1 ) {
 		cvtColor(in, in, CV_BGR2GRAY);
 		threshold(in, in, 0, 255, CV_THRESH_BINARY);
 	}
+	resize( in, out, Size(width, height), 0, 0 );
+	return;
 	Mat ss = Mat::zeros(width-2, height-2, in.type());
 	resize( in, ss, Size(width-2, height-2), 0, 0 );
 	out = 0;
