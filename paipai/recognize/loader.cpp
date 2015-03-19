@@ -4,8 +4,9 @@
 #include "file.h"
 
 
-loader::loader() {
+loader::loader( HANDLER_TYPE ht ) {
 	mClearBrush = CreateSolidBrush(RGB(0,0,0)); 
+	mHt = ht;
 }
 
 loader::~loader(){
@@ -121,8 +122,10 @@ void loader::splitMat( const wchar_t* fontname, Mat* m ){
 		switch( mHt ) {
 		case RESIZE:
 			mats = r.getThinMats(*m); // to CV_8UC1
+			break;
 		case ORIGIN:
 			mats = r.getOriMats(*m);
+			break;
 		};
 
 		imwrite("getNormalMats.png", *m);
@@ -135,8 +138,7 @@ void loader::splitMat( const wchar_t* fontname, Mat* m ){
 	}
 }
 
-void loader::handle( HANDLER_TYPE ht ){
-	mHt = ht;
+void loader::handle(){
 	HDC dc0 = GetDC(0);
 	HDC hdc = CreateCompatibleDC(dc0);
 

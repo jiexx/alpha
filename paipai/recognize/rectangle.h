@@ -80,7 +80,7 @@ public:
 	inline bool isValidRects( vector<Rect>& r ) {
 		if( r.size() != 6 )
 			return false;
-		for( int i = 0 ; i < r.size() ; i ++ ) {
+		for( unsigned int i = 0 ; i < r.size() ; i ++ ) {
 			if( r[i].width <= DW0 ) 
 				return false;
 		}
@@ -164,6 +164,8 @@ public:
 			if( o ) {
 
 				roi.copyTo( *o );
+				//cvtColor(*o, *o, CV_BGR2GRAY);
+				threshold(*o, *o, 0, 255, CV_THRESH_BINARY);
 
 				if( out )
 					out->push_back(o);

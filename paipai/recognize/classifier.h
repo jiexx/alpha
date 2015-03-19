@@ -119,22 +119,26 @@ public:
 		
 		for( int i = 0 ; i < chars ; i ++ ) { // chars
 			for( int j = 0 ; j < fonts ; j ++ ) { //font
-				lables.push_back( i );
 				vector<Mat*>* f = l.getFontCharSet(j);
 				if( f ) {
 					Mat* c = (*f)[i];
 					if( c ) {
 						Mat m;
-						c->convertTo(m, CV_32FC1);
+						c->convertTo(m, CV_32FC1, 1.0f/255.0f);
 						vector<bin>& b = potr.getPortrait(m);
-						for( int k = 0 ; k < b.size() ; k ++ ) {
+						for( unsigned int k = 0 ; k < b.size() ; k ++ ) {
+							lables.push_back( (float)i );
 							samples.push_back(b[i]);
 						}
 					}
 				}
 			}
 		}
+		lables.push_back( -1.0f );
+		samples.push_back( bin(1.0f) );
 
+		lables.push_back( -2.0f );
+		samples.push_back( bin(0.0f) );
 
 		Mat cls( lables.size(), 1, CV_32FC1, lables.begin() );
 		Mat tra( samples.size(), BIN_THETA*BIN_R, CV_32FC1, samples.begin() );
@@ -176,21 +180,26 @@ public:
 			imwrite("unit.png",unit);
 
 			unit = unit.reshape(0, 1);
-			unit.convertTo(row, CV_32FC1);
+			unit.convertTo(row, CV_32FC1, 1.0f/255.0f);
 
-			float result = wp.find(row);
+			int result = wp.find(row);
 			out.push_back((char)result);
 		}
 		return out;
 	}
 	inline const vector<char> findBySC( wrapper& wp, Mat& img, int radius ) {
-		portrait    potr(radius);
+		portrait    potr(radius, false);
+		int result;
+		vector<char> out;
 
 		vector<bin>& b = potr.getPortrait(img);
-		for( int i = 0 ; i < b.size() ; i ++ ) {
+		for( unsigned int i = 0 ; i < b.size() ; i ++ ) {
 			Mat row( b[i].size(), 1, CV_32FC1, b[i].ptr() );
-			float result = wp.find(row);
+			result = wp.find(row);
+			if( result > 0 )
+				out.push_back((char)result);
 		}
+		return out;
 	}
 	inline const vector<char> findByKNN( wrapper& wp, Mat& img ) {
 		rects rs;

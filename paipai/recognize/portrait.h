@@ -20,17 +20,22 @@ enum BIN {
 class bin {
 public:
 	inline bin(){
-		memset(data, 0, BIN_R*BIN_THETA);
+		memset(data, 0, sizeof(data));
 	};
-	inline bin(bin& b){
+	inline bin( float v ){
+		float* p = (float*)data;
+		for(int i = 0 ; i < sizeof(data) ; i ++ ) 
+			*p++ = v;
+	};
+	inline bin(const bin& b){
 		if( data )
-			memcpy(data, b.data, BIN_R*BIN_THETA);
+			memcpy(data, b.data, sizeof(data));
 	};
 	inline ~bin(){
-		memset(data, 0, BIN_R*BIN_THETA);
+		memset(data, 0, sizeof(data));
 	};
 	inline void clear() {
-		memset(data, 0, BIN_R*BIN_THETA);
+		memset(data, 0, sizeof(data));
 	};
 	inline float& operator()(int i, int j) {
 		return data[i][j];
@@ -39,74 +44,113 @@ public:
 		return (float*)data;
 	};
 	inline int size() {
-		return BIN_R*BIN_THETA;
-	}
+		return sizeof(data);
+	};
+	inline class step {
+	public:
+		int x;
+		int y;
+		inline step() :x(0),y(0),ix(0) {
+		};
+		inline void make( int w, int h ) {
+			//guard_xe = ceil((float)w / BIN_R);
+			guard_y = (int)ceil((float)h / BIN_THETA);
+			guard_x[0] = 2;
+			guard_x[1] = 4;
+			guard_x[2] = 8;
+			guard_x[3] = 16;
+			guard_x[4] = 32;
+		};
+		inline void inc_x(){
+			if( ++x == guard_x[ix] ) { //ceil for ==, floor for >
+				ix = (ix++) & 0x00000007;
+				x = 0;
+			}
+		};
+		inline void inc_y(){
+			if( ++y == guard_y ) {
+				y = 0;
+			}
+		};
+		inline void reset(){
+			ix = 0;
+			x = 0;
+			y = 0;
+		};
+	protected:
+		int guard_x[BIN_R];
+		int ix;
+		//int guard_xe;
+		int guard_y;
+	};
 protected:
 	float data[BIN_THETA][BIN_R];
 };
+
 class portrait {
 public:
-	inline portrait( int radius ) {
+	inline portrait( int radius, bool clr = true ) {
 		mRadius = radius;
 		mPolar = Mat::zeros(2*radius, 2*radius, CV_32FC1);
+		mAvailableColor = clr;
+		mColor = 1.0f;
+		mStep.make(2*radius, 2*radius);
 	};
 
 	inline bool fe( float c1, float c2 ) const {
 		return ( c1 - c2 >= -0.000001f && c1 - c2 <= 0.000001f );
 	};
 
-	inline bin& getCenterPointPortrait( const Mat& square ) { //CV_32FC1
+	inline bin& getCenterPointPortrait( const Mat& square, float center ) { //CV_32FC1
+
 		mPortraits.clear();
 		mPolar = 0;
+		mStep.reset();
 
+		
 		cvLogPolar(&square, &mPolar, cvPoint2D32f(mRadius, mRadius), 1);
-		float center = square.at<float>(mRadius, mRadius);
-		Point bin(0,0), cycle(0,0);
-		Size binsz;
-		binsz.width = ceil((float)mPolar.cols / BIN_R);
-		binsz.height = ceil((float)mPolar.rows / BIN_THETA);
-		for( int i = 0 ; i < mPolar.rows ; i ++, cycle.y ++ ) {
-			if( cycle.y == binsz.width ) { //ceil for ==, floor for >
-				bin.y ++;
-				cycle.y = 0;
-			}
-			for( int j = 0 ; j < mPolar.cols ; j ++, cycle.x ++ ) {
-				if( cycle.x == binsz.width ) {
-					bin.x ++;
-					cycle.x = 0;
-				}
+		
+		for( int i = 0 ; i < mPolar.rows ; i ++, mStep.inc_x() ) {
+			for( int j = 0 ; j < mPolar.cols ; j ++, mStep.inc_y() ) {
 				if( fe( center, mPolar.at<float>(i,j) ) ) {
-					mPortraits(i,j) ++;
+					mPortraits(mStep.x,mStep.y) ++;
 				}
 			}
 		}
+		Mat debug(BIN_R, BIN_THETA, CV_32FC1, mPortraits.ptr() );
+		imwrite("debug",debug);
 		return mPortraits;
 	};
 	inline vector<bin>& getPortrait(Mat& src) {//CV_32FC1
-		Mat in = Mat::zeros(src.rows+2*mRadius, src.cols+2*mRadius, CV_32FC1);
+		Mat in = Mat::zeros(src.rows+2*mRadius, src.cols+2*mRadius, src.type());
 		mOutput.clear();
-
-		Mat dst(in,Rect(mRadius, mRadius, src.rows, src.cols));
-		src.copyTo(dst);
+		Mat ss = Mat::zeros(src.rows, src.cols, in.type());
+		src.copyTo(ss);
+		Mat dst(in, Rect(mRadius, mRadius, src.rows, src.cols));
+		ss.copyTo(dst);
+		in *= 255;
+		imwrite("in.png",in);
+		float center;
 		for( int i = 0 ; i < src.rows ; i ++ ) {
 			for( int j = 0 ; j < src.cols ; j ++ ) {
-				Mat roi(in, Rect(mRadius+i, mRadius+j, mRadius, mRadius));
-				getCenterPointPortrait( roi );
-				mOutput.push_back(mPortraits);
+				Mat roi(in, Rect(j, i, 2*mRadius, 2*mRadius));
+				center = roi.at<float>(mRadius, mRadius);
+				if( !mAvailableColor || fe(mColor, center) ){
+					getCenterPointPortrait( roi, center );
+					mOutput.push_back(mPortraits);
+				}
 			}
 		}
 		return mOutput;
 	};
-	inline int step() {
-		return mStep;
-	}
 private:
 	Mat mPolar;
-	int mStep;
 	vector<bin> mOutput;
 	int mRadius;
 	bin mPortraits;
-
+	bool mAvailableColor;
+	float mColor;
+	bin::step mStep;
 };
 
 

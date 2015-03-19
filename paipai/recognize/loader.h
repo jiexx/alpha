@@ -19,7 +19,7 @@ enum HANDLER_TYPE{
 
 class loader {
 public:
-	loader();
+	loader(HANDLER_TYPE ht = RESIZE);
 	~loader();
 	void addFont( const wchar_t* file, const wchar_t* font );
 	void addChar( const wchar_t* str );
@@ -33,7 +33,7 @@ public:
 	vector<Mat*>* getFontCharSet( int index );
 	void saveBinary();
 	void saveImage();
-	void handle( HANDLER_TYPE ht = RESIZE );
+	void handle();
 	inline HANDLER_TYPE type() const {
 		return mHt;
 	}

@@ -33,7 +33,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		{"8.png"},
 		{"9.png"},
 	};
-	loader lo;
+	loader lo(ORIGIN);
 	lo.addFont(L"华文彩云.ttf",L"华文彩云");
 	lo.addFont(L"微软vista宋体.ttf",L"SimSun-ExtB");
 	lo.addChar(L"0123456789");
@@ -42,12 +42,12 @@ int _tmain(int argc, _TCHAR* argv[])
 	lo.saveImage();
 
 	classifier clsr;
-	wrapper* wpp = clsr.getSVM( lo );
+	wrapper* wpp = clsr.getSC( lo, 14 );
 	vector<char> str;
 	if( wpp ) {
 		Mat m = imread("test6.png");
 		Mat roi(m, Rect(1,1,m.cols-2,m.rows-2));
-		str = clsr.findByKNN( *wpp, roi );
+		str = clsr.findBySC( *wpp, roi,14 );
 		m = imread("test6.png");
 		Mat roi2(m, Rect(1,1,m.cols-2,m.rows-2));
 		str = clsr.findByKNN( *wpp, roi2 );
