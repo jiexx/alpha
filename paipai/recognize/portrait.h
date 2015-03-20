@@ -121,14 +121,17 @@ public:
 		imwrite("debug",debug);
 		return mPortraits;
 	};
-	inline vector<bin>& getPortrait(Mat& src) {//src CV_8UC3 //only 8uc1 can be ROI!!!
-		Mat ss = Mat::zeros(W, H, CV_8UC1);
+	inline vector<bin>& getPortrait(Mat& src) {//src CV_8UC3 //only 8uc1 8uc3 can be ROI!!! 32fc1 not
+		Mat ss;
+		cvtColor(src, ss, CV_BGR2GRAY);
+		//Mat ss = src.clone();//Mat::zeros(src.cols, src.rows, CV_8UC3);
 
 		Mat in = Mat::zeros(src.rows+2*mRadius, src.cols+2*mRadius, CV_8UC1);
-		
-		resize( src, ss, Size(src.rows, src.cols), 0, 0 );
-		Mat roi(in, Rect(1, 1, src.rows, src.cols));
+		//src.copyTo(ss);
+		//resize( src, ss, Size(src.cols, src.rows), 0, 0 );
+		Mat roi(in, Rect(mRadius, mRadius, src.cols, src.rows));
 		ss.copyTo(roi);
+		imwrite("ss.png",ss);
 		imwrite("in0.png",in);
 
 		mOutput.clear();
