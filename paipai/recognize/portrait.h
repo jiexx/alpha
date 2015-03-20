@@ -93,7 +93,7 @@ public:
 		mRadius = radius;
 		mPolar = Mat::zeros(2*radius, 2*radius, CV_32FC1);
 		mAvailableColor = clr;
-		mColor = 1.0f;
+		mColor = 255.0f;
 		mStep.make(2*radius, 2*radius);
 	};
 
@@ -121,14 +121,20 @@ public:
 		imwrite("debug",debug);
 		return mPortraits;
 	};
-	inline vector<bin>& getPortrait(Mat& src) {//CV_32FC1
-		Mat in = Mat::zeros(src.rows+2*mRadius, src.cols+2*mRadius, src.type());
+	inline vector<bin>& getPortrait(Mat& src) {//src CV_8UC3 //only 8uc1 can be ROI!!!
+		Mat ss = Mat::zeros(W, H, CV_8UC1);
+
+		Mat in = Mat::zeros(src.rows+2*mRadius, src.cols+2*mRadius, CV_8UC1);
+		
+		resize( src, ss, Size(src.rows, src.cols), 0, 0 );
+		Mat roi(in, Rect(1, 1, src.rows, src.cols));
+		ss.copyTo(roi);
+		imwrite("in0.png",in);
+
 		mOutput.clear();
-		Mat ss = Mat::zeros(src.rows, src.cols, in.type());
-		src.copyTo(ss);
-		Mat dst(in, Rect(mRadius, mRadius, src.rows, src.cols));
+		imwrite("src.png",ss);
+		Mat dst(in, Rect(mRadius, mRadius, src.rows, src.cols));  
 		ss.copyTo(dst);
-		in *= 255;
 		imwrite("in.png",in);
 		float center;
 		for( int i = 0 ; i < src.rows ; i ++ ) {
