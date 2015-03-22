@@ -160,7 +160,7 @@ public:
 			Rect& r = mRects[i];
 			Mat roi(m, r);
 
-			Mat* o = new Mat(roi.cols, roi.rows, CV_32FC1);
+			Mat* o = new Mat(roi.cols, roi.rows, CV_8UC3);
 			if( o ) {
 
 				roi.copyTo( *o );

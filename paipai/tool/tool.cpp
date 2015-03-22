@@ -42,7 +42,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	lo.saveImage();
 
 	classifier clsr;
-	wrapper* wpp = clsr.getSC( lo, 14 );
+	wrapper* wpp = clsr.getSC( lo, 11 );
 	vector<char> str;
 	if( wpp ) {
 		Mat m = imread("test6.png");

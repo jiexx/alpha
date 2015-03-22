@@ -123,9 +123,7 @@ public:
 				if( f ) {
 					Mat* c = (*f)[i];
 					if( c ) {
-						Mat m;
-						c->convertTo(m, CV_32FC1, 1.0f/255.0f);
-						vector<bin>& b = potr.getPortrait(m);
+						vector<bin>& b = potr.getPortrait(*c);
 						for( unsigned int k = 0 ; k < b.size() ; k ++ ) {
 							lables.push_back( (float)i );
 							samples.push_back(b[i]);
