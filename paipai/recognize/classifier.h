@@ -129,7 +129,10 @@ public:
 						vector<bin>& b = potr.getPortrait(*c);
 						for( unsigned int k = 0 ; k < b.size() ; k ++ ) {
 							lables.push_back( (float)i );
-							samples.push_back(b[i]);
+							samples.push_back(b[k]);
+							//stringstream sk;
+							//sk<< k;
+							//imwrite( (sk.str()+string("-key.png")).c_str(), b[i].toMat() );
 						}
 					}
 				}
@@ -143,7 +146,7 @@ public:
 
 		Mat cls( lables.size(), 1, CV_32FC1, lables.begin() );
 		Mat tra( samples.size(), bin::size(), CV_32FC1, samples.begin() );
-		
+		imwrite("tra.png",tra);
 		return new svmWrapper( tra, cls );
 	}
 	inline void byChanales( const Mat& img, int bgr, Mat& out ) {
@@ -200,6 +203,7 @@ public:
 			if( result > 0 )
 				out.push_back((char)result);
 		}
+		vector<Point>& pts = potr.getPoints();
 		return out;
 	}
 	inline const vector<char> findByKNN( wrapper& wp, Mat& img ) {

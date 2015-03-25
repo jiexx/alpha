@@ -46,6 +46,9 @@ public:
 	inline static int size() {
 		return BIN_THETA*BIN_R;
 	};
+	inline Mat toMat() {
+		return Mat(BIN_THETA, BIN_R, CV_32FC1, ptr());
+	};
 protected:
 	float data[BIN_THETA][BIN_R];
 };
@@ -80,7 +83,7 @@ public:
 		return ( abs(c1[0] - c2[0]) < 15 && abs(c1[1] - c2[1]) < 15 && abs(c1[2] - c2[2]) < 15 );
 	};
 
-	inline bin& getCenterPointPortrait( const Mat& square, Vec3b center, int x, int y ) { //CV_32FC1
+	inline bin& getCenterPointPortrait( const Mat& square, int x, int y ) { //CV_32FC1
 
 		mPortraits.clear();
 		mPolar = 0;
@@ -115,13 +118,11 @@ public:
 			for( int j = 0 ; j < src.cols ; j ++ ) {
 				center = src.at<Vec3b>(i, j);
 				if( fe(mColor, center) ){
-					getCenterPointPortrait( src, center, j, i );
-					if( mWrapper ) {
-						if( mWrapper->find( mPortraits ) ) 
-							mOutput.push_back(mPortraits);
-					}else {
-						mOutput.push_back(mPortraits);
-					}
+					getCenterPointPortrait( src, j, i );
+					mOutput.push_back(mPortraits);
+					//stringstream sk;
+					//sk<< j;
+					//imwrite( (sk.str()+string("-key.png")).c_str(), mOutput[mOutput.size()-1].toMat() );
 				}
 			}
 		}
@@ -135,21 +136,27 @@ public:
 			Mat dst = Mat::zeros(src.rows+mRadius*2, src.cols+mRadius*2, CV_8UC3);
 			Mat c(dst, Rect(mRadius, mRadius, src.cols, src.rows));
 			src.copyTo(c);
-			for( int i = 0 ; i < src.rows ; i ++ ) {
-				for( int j = 0 ; j < src.cols ; j ++ ) {
-					center = dst.at<Vec3b>(i+mRadius, j+mRadius);
-					Mat roi(dst, Rect(j, i, mRadius*2, mRadius*2));
+			for( int i = 0 ; i < src.cols ; i ++ ) {
+				for( int j = 0 ; j < src.rows ; j ++ ) {
+					center = dst.at<Vec3b>(j+mRadius, i+mRadius);
+					Mat roi(dst, Rect(i, j, mRadius*2, mRadius*2));
 					copyColor(mROI, roi, center);
-					doPortraitBase( mROI );
+					getCenterPointPortrait( mROI, mRadius, mRadius );
+					mOutput.push_back(mPortraits);
+					mPoints.push_back(Point(i,j));
 				}
 			}
 		}
 		return mOutput;
 	};
+	inline vector<Point>& getPoints() {
+		return mPoints;
+	};
 private:
 	Mat mPolar;
 	Mat mROI;
 	vector<bin> mOutput;
+	vector<Point> mPoints;
 	int mWidth;
 	int mHeight;
 	int mRadius;
