@@ -15,10 +15,6 @@ enum KNN_ARGS{
 	K = 1
 };
 
-class wrapper {
-public:
-	virtual int find(Mat& m) = 0;
-};
 
 class svmWrapper : public wrapper {
 public:
@@ -41,6 +37,10 @@ public:
 			return (int) mSVM->predict(m);
 		return -1;
 	};
+	inline int find(bin& b) {
+		Mat row( 1, b.size(), CV_32FC1, b.ptr() );
+		return find(row);
+	};
 protected:
 	CvSVM* mSVM;
 };
@@ -56,6 +56,9 @@ public:
 		if( mKNN )
 			return (int) mKNN->find_nearest(m, K, 0, 0, &nearest, 0);
 		return -1;
+	};
+	inline int find(bin& b) {
+		return 0;
 	};
 protected:
 	CvKNearest* mKNN;
@@ -115,7 +118,7 @@ public:
 
 		Vector<float> lables;
 		Vector<bin> samples;
-		portrait    potr(radius);
+		portrait    potr(radius, POR_WHITE);
 		
 		for( int i = 0 ; i < chars ; i ++ ) { // chars
 			for( int j = 0 ; j < fonts ; j ++ ) { //font
@@ -139,7 +142,7 @@ public:
 		samples.push_back( bin(0.0f) );
 
 		Mat cls( lables.size(), 1, CV_32FC1, lables.begin() );
-		Mat tra( samples.size(), BIN_THETA*BIN_R, CV_32FC1, samples.begin() );
+		Mat tra( samples.size(), bin::size(), CV_32FC1, samples.begin() );
 		
 		return new svmWrapper( tra, cls );
 	}
@@ -186,13 +189,13 @@ public:
 		return out;
 	}
 	inline const vector<char> findBySC( wrapper& wp, Mat& img, int radius ) {
-		portrait    potr(radius, false);
+		portrait    potr(radius, POR_POINT, &wp);
 		int result;
 		vector<char> out;
 
 		vector<bin>& b = potr.getPortrait(img);
 		for( unsigned int i = 0 ; i < b.size() ; i ++ ) {
-			Mat row( b[i].size(), 1, CV_32FC1, b[i].ptr() );
+			Mat row( 1, b[i].size(), CV_32FC1, b[i].ptr() );
 			result = wp.find(row);
 			if( result > 0 )
 				out.push_back((char)result);

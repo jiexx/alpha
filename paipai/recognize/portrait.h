@@ -24,7 +24,7 @@ public:
 	};
 	inline bin( float v ){
 		float* p = (float*)data;
-		for(int i = 0 ; i < sizeof(data) ; i ++ ) 
+		for(int i = 0 ; i < BIN_THETA*BIN_R ; i ++ ) 
 			*p++ = v;
 	};
 	inline bin(const bin& b){
@@ -43,44 +43,49 @@ public:
 	inline float* ptr() {
 		return (float*)data;
 	};
-	inline int size() {
-		return sizeof(data);
+	inline static int size() {
+		return BIN_THETA*BIN_R;
 	};
 protected:
 	float data[BIN_THETA][BIN_R];
 };
 
+enum POR {
+	POR_WHITE,
+	POR_POINT,
+};
+
+class wrapper {
+public:
+	virtual int find(Mat& m) = 0;
+	virtual int find(bin& b) = 0;
+};
+
 class portrait {
 public:
-	inline portrait( int r, bool clr = true ) {
-		mWidht = BIN_R;
+	inline portrait( int r,  POR mode = POR_WHITE, wrapper* wr = 0 ) {
+		mWidth = BIN_R;
 		mHeight = BIN_THETA;
 		mRadius = r;
-		mPolar = Mat::zeros(mHeight, mWidht, CV_8UC3);
-		mAvailableColor = clr;
+		mPolar = Mat::zeros(mWidth, mHeight, CV_8UC3);
+		mROI = Mat::zeros(mRadius*2, mRadius*2, CV_8UC3);
+		mMode = mode;
 		mColor = Vec3b(255,255,255);
-		//mStep.make(2*radius, 2*radius);
+		mWrapper = wr;
 	};
-
 	inline bool fe( Vec3b& c1, Vec3b& c2 ) const {
 		return ( c1[0] - c2[0] == 0 && c1[1] - c2[1] == 0 && c1[2] - c2[2] == 0 );
+	};
+	inline bool re( Vec3b& c1, Vec3b& c2 ) const {
+		return ( abs(c1[0] - c2[0]) < 15 && abs(c1[1] - c2[1]) < 15 && abs(c1[2] - c2[2]) < 15 );
 	};
 
 	inline bin& getCenterPointPortrait( const Mat& square, Vec3b center, int x, int y ) { //CV_32FC1
 
 		mPortraits.clear();
 		mPolar = 0;
-		//mStep.reset();
-
-		//Mat debug = imread("cvLogPolar0.png");
 		CvMat s = square, d = mPolar;
 		cvLogPolar(&s, &d, cvPoint2D32f(x, y), 1, CV_INTER_LINEAR);
-		//cvLinearPolar(&s, &d, cvPoint2D32f(x, y), mWidht, CV_INTER_LINEAR);
-		//imwrite("cvLogPolar2.png",mPolar);
-		//Mat t = Mat::zeros(square.rows, square.cols,square.type()); 
-		//CvMat m = t;
-		//cvLinearPolar(&d, &m, cvPoint2D32f(x, y), 60, CV_INTER_LINEAR|CV_WARP_INVERSE_MAP );
-		//imwrite("cvLogPolar3.png",t);
 		for( int i = 0 ; i < mPolar.rows ; i ++ ) {
 			for( int j = 0 ; j < mPolar.cols ; j ++ ) {
 				mPortraits(i, j) = mPolar.at<Vec3b>(i,j)[0];
@@ -88,19 +93,54 @@ public:
 		}
 		return mPortraits;
 	};
-	inline vector<bin>& getPortrait(Mat& src) {//src CV_8UC3 //only 8uc1 8uc3 can be ROI!!! 32fc1 not
-		//Mat in = Mat::zeros(src.rows+2*mRadius+1, src.cols+2*mRadius+1, CV_8UC3);
-		//Mat dst(in, Rect(mRadius, mRadius, src.cols, src.rows));
-		//src.copyTo(dst);
-		mOutput.clear();
+	inline void copyColor( Mat& dst, Mat& src, Vec3b& v3 ) {
+		Vec3b *p, *to;
+		for( int i = 0 ; i < src.rows ; i ++ ) {
+			p = src.ptr<Vec3b>(i);
+			to = dst.ptr<Vec3b>(i);
+			for( int j = 0 ; j < src.cols ; j ++ ) {
+				if( re( v3, p[j] ) ) {
+					to[j] = mColor;
+				} else {
+					to[j][0] = 0;
+					to[j][1] = 0;
+					to[j][2] = 0;
+				}
+			}
+		}
+	};
+	inline void doPortraitBase(Mat& src) {
 		Vec3b center;
 		for( int i = 0 ; i < src.rows ; i ++ ) {
 			for( int j = 0 ; j < src.cols ; j ++ ) {
-				//Mat roi(in, Rect(j, i, 2*mRadius, 2*mRadius));
 				center = src.at<Vec3b>(i, j);
-				if( !mAvailableColor || fe(mColor, center) ){
-					getCenterPointPortrait( src, center, 11, 12 );
-					mOutput.push_back(mPortraits);
+				if( fe(mColor, center) ){
+					getCenterPointPortrait( src, center, j, i );
+					if( mWrapper ) {
+						if( mWrapper->find( mPortraits ) ) 
+							mOutput.push_back(mPortraits);
+					}else {
+						mOutput.push_back(mPortraits);
+					}
+				}
+			}
+		}
+	};
+	inline vector<bin>& getPortrait(Mat& src) {//src CV_8UC3 //only 8uc1 8uc3 can be ROI!!! 32fc1 not
+		mOutput.clear();
+		Vec3b center;
+		if( POR_WHITE == mMode ) {
+			doPortraitBase( src );
+		}else if( POR_POINT == mMode ) {
+			Mat dst = Mat::zeros(src.rows+mRadius*2, src.cols+mRadius*2, CV_8UC3);
+			Mat c(dst, Rect(mRadius, mRadius, src.cols, src.rows));
+			src.copyTo(c);
+			for( int i = 0 ; i < src.rows ; i ++ ) {
+				for( int j = 0 ; j < src.cols ; j ++ ) {
+					center = dst.at<Vec3b>(i+mRadius, j+mRadius);
+					Mat roi(dst, Rect(j, i, mRadius*2, mRadius*2));
+					copyColor(mROI, roi, center);
+					doPortraitBase( mROI );
 				}
 			}
 		}
@@ -108,12 +148,14 @@ public:
 	};
 private:
 	Mat mPolar;
+	Mat mROI;
 	vector<bin> mOutput;
-	int mWidht;
+	int mWidth;
 	int mHeight;
 	int mRadius;
 	bin mPortraits;
-	bool mAvailableColor;
+	int mMode;
+	wrapper* mWrapper;
 	Vec3b mColor;
 	//bin::step mStep;
 };
