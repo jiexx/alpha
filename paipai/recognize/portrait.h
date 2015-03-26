@@ -47,7 +47,7 @@ public:
 		return BIN_THETA*BIN_R;
 	};
 	inline Mat toMat() {
-		return Mat(BIN_THETA, BIN_R, CV_32FC1, ptr());
+		return Mat(BIN_R, BIN_THETA, CV_32FC1, ptr());
 	};
 protected:
 	float data[BIN_THETA][BIN_R];
@@ -120,16 +120,13 @@ public:
 				if( fe(mColor, center) ){
 					getCenterPointPortrait( src, j, i );
 					mOutput.push_back(mPortraits);
-					//stringstream sk;
-					//sk<< j;
-					//imwrite( (sk.str()+string("-key.png")).c_str(), mOutput[mOutput.size()-1].toMat() );
 				}
 			}
 		}
 	};
 	inline vector<bin>& getPortrait(Mat& src) {//src CV_8UC3 //only 8uc1 8uc3 can be ROI!!! 32fc1 not
 		mOutput.clear();
-		Vec3b center;
+		Vec3b center;int r;
 		if( POR_WHITE == mMode ) {
 			doPortraitBase( src );
 		}else if( POR_POINT == mMode ) {
@@ -142,6 +139,15 @@ public:
 					Mat roi(dst, Rect(i, j, mRadius*2, mRadius*2));
 					copyColor(mROI, roi, center);
 					getCenterPointPortrait( mROI, mRadius, mRadius );
+					stringstream sk;
+					sk<< j;
+					imwrite( (sk.str()+string("-roi.png")).c_str(), mROI );
+					Mat m = mPortraits.toMat().reshape(0, 1);
+					imwrite( (sk.str()+string("-roi-p.png")).c_str(), m );
+					if( mWrapper ) {
+						r = mWrapper->find(mPortraits);
+					}
+						
 					mOutput.push_back(mPortraits);
 					mPoints.push_back(Point(i,j));
 				}

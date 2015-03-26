@@ -15,6 +15,72 @@ enum KNN_ARGS{
 	K = 1
 };
 
+class fixSVM : public CvSVM {
+	virtual bool set_params( const CvSVMParams& _params )
+	{
+		bool ok = false;
+
+		CV_FUNCNAME( "CvSVM::set_params" );
+
+		__BEGIN__;
+
+		int kernel_type, svm_type;
+
+		params = _params;
+
+		kernel_type = params.kernel_type;
+		svm_type = params.svm_type;
+
+		if( kernel_type != LINEAR && kernel_type != POLY &&
+			kernel_type != SIGMOID && kernel_type != RBF )
+			CV_ERROR( CV_StsBadArg, "Unknown/unsupported kernel type" );
+
+		if( kernel_type == LINEAR )
+			params.gamma = 1;
+		else if( params.gamma <= 0 )
+			CV_ERROR( CV_StsOutOfRange, "gamma parameter of the kernel must be positive" );
+
+		if( kernel_type != SIGMOID && kernel_type != POLY )
+			params.coef0 = 0;
+		else if( params.coef0 < 0 )
+			CV_ERROR( CV_StsOutOfRange, "The kernel parameter <coef0> must be positive or zero" );
+
+		if( kernel_type != POLY )
+			params.degree = 0;
+		else if( params.degree <= 0 )
+			CV_ERROR( CV_StsOutOfRange, "The kernel parameter <degree> must be positive" );
+
+		if( svm_type != C_SVC && svm_type != NU_SVC &&
+			svm_type != ONE_CLASS && svm_type != EPS_SVR &&
+			svm_type != NU_SVR )
+			CV_ERROR( CV_StsBadArg, "Unknown/unsupported SVM type" );
+
+		if( svm_type == ONE_CLASS || svm_type == NU_SVC )
+			params.C = 0;
+		else if( params.C <= 0 )
+			CV_ERROR( CV_StsOutOfRange, "The parameter C must be positive" );
+
+		if( svm_type == C_SVC || svm_type == EPS_SVR )
+			params.nu = 0;
+		else if( params.nu <= 0 || params.nu >= 1 )
+			CV_ERROR( CV_StsOutOfRange, "The parameter nu must be between 0 and 1" );
+
+		if( svm_type != EPS_SVR )
+			params.p = 0;
+		else if( params.p <= 0 )
+			CV_ERROR( CV_StsOutOfRange, "The parameter p must be positive" );
+
+		if( svm_type != C_SVC )
+			params.class_weights = 0;
+
+		params.term_crit.epsilon = MAX( params.term_crit.epsilon, DBL_EPSILON );
+		ok = true;
+
+		__END__;
+
+		return ok;
+	}
+};
 
 class svmWrapper : public wrapper {
 public:
@@ -22,16 +88,24 @@ public:
 		CvSVMParams mParams;
 		mParams.svm_type    = CvSVM::C_SVC;
 		mParams.kernel_type = CvSVM::LINEAR ;
-		mParams.degree      = 10;
-		mParams.gamma       = 5.383;
-		mParams.coef0       = 1;
-		mParams.C           = 2.67;
-		mParams.nu          = 0.5;
-		mParams.p           = 0.1;
-		mParams.term_crit   = cvTermCriteria(CV_TERMCRIT_EPS, 1000,  FLT_EPSILON);
+		//mParams.degree      = 10;
+		//mParams.gamma       = 5.383;
+		//mParams.coef0       = 1;
+		//mParams.C           = 1;//2.67;
+		//mParams.nu          = 0.5;
+		//mParams.p           = 0.1;
+		mParams.term_crit   = cvTermCriteria(CV_TERMCRIT_EPS, 10000,  FLT_EPSILON);
 
-		mSVM = new CvSVM(tra, cls, Mat(), Mat(), mParams);
-	}
+		mSVM = new fixSVM();
+		if( mSVM ) {
+			mSVM->train(tra, cls, Mat(), Mat(), mParams);
+		}
+	};
+	inline ~svmWrapper() {
+		if( mSVM ) {
+			delete mSVM;
+		}
+	};
 	inline int find(Mat& m) {
 		if( mSVM )
 			return (int) mSVM->predict(m);
@@ -42,7 +116,7 @@ public:
 		return find(row);
 	};
 protected:
-	CvSVM* mSVM;
+	fixSVM* mSVM;
 };
 
 class knnWrapper : public wrapper {
@@ -119,7 +193,18 @@ public:
 		Vector<float> lables;
 		Vector<bin> samples;
 		portrait    potr(radius, POR_WHITE);
+
+		Mat m1 = Mat::zeros(radius*2, radius*2, CV_8UC3);
+		m1 = Scalar(255,255,255,255);
 		
+		bin& bw = potr.getCenterPointPortrait(m1, radius, radius);
+		lables.push_back( -1.0f );
+		imwrite("toMat.png", bw.toMat());
+		samples.push_back(bw);
+
+		lables.push_back( -2.0f );
+		samples.push_back(bin(0.0f));
+
 		for( int i = 0 ; i < chars ; i ++ ) { // chars
 			for( int j = 0 ; j < fonts ; j ++ ) { //font
 				vector<Mat*>* f = l.getFontCharSet(j);
@@ -130,19 +215,18 @@ public:
 						for( unsigned int k = 0 ; k < b.size() ; k ++ ) {
 							lables.push_back( (float)i );
 							samples.push_back(b[k]);
-							//stringstream sk;
-							//sk<< k;
-							//imwrite( (sk.str()+string("-key.png")).c_str(), b[i].toMat() );
+							/*stringstream sk;
+							sk<< k;
+							Mat& row = samples[0].toMat();
+							imwrite("toMat.png",row);
+							row = row.reshape(0, 1);
+							imwrite( (sk.str()+string("-key.png")).c_str(), row );*/
 						}
 					}
 				}
 			}
 		}
-		lables.push_back( -1.0f );
-		samples.push_back( bin(1.0f) );
-
-		lables.push_back( -2.0f );
-		samples.push_back( bin(0.0f) );
+		
 
 		Mat cls( lables.size(), 1, CV_32FC1, lables.begin() );
 		Mat tra( samples.size(), bin::size(), CV_32FC1, samples.begin() );
@@ -200,7 +284,7 @@ public:
 		for( unsigned int i = 0 ; i < b.size() ; i ++ ) {
 			Mat row( 1, b[i].size(), CV_32FC1, b[i].ptr() );
 			result = wp.find(row);
-			if( result > 0 )
+			if( result >= 0 )
 				out.push_back((char)result);
 		}
 		vector<Point>& pts = potr.getPoints();
