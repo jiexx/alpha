@@ -47,7 +47,7 @@ public:
 		return BIN_THETA*BIN_R;
 	};
 	inline Mat toMat() {
-		return Mat(BIN_R, BIN_THETA, CV_32FC1, ptr());
+		return Mat(BIN_THETA, BIN_R, CV_32FC1, ptr());
 	};
 protected:
 	float data[BIN_THETA][BIN_R];
@@ -70,11 +70,14 @@ public:
 		mWidth = BIN_R;
 		mHeight = BIN_THETA;
 		mRadius = r;
-		mPolar = Mat::zeros(mWidth, mHeight, CV_8UC3);
+		mPolar = Mat::zeros(mHeight, mWidth, CV_8UC3);
 		mROI = Mat::zeros(mRadius*2, mRadius*2, CV_8UC3);
 		mMode = mode;
 		mColor = Vec3b(255,255,255);
 		mWrapper = wr;
+	};
+	inline Scalar getBgColor() {
+		return Scalar(mColor[0],mColor[1],mColor[2],255);
 	};
 	inline bool fe( Vec3b& c1, Vec3b& c2 ) const {
 		return ( c1[0] - c2[0] == 0 && c1[1] - c2[1] == 0 && c1[2] - c2[2] == 0 );
@@ -126,32 +129,21 @@ public:
 	};
 	inline vector<bin>& getPortrait(Mat& src) {//src CV_8UC3 //only 8uc1 8uc3 can be ROI!!! 32fc1 not
 		mOutput.clear();
-		Vec3b center;int r;
+		Vec3b color;
 		if( POR_WHITE == mMode ) {
 			doPortraitBase( src );
 		}else if( POR_POINT == mMode ) {
-			Mat dst = Mat::zeros(src.rows+mRadius*2, src.cols+mRadius*2, CV_8UC3);
-			Mat c(dst, Rect(mRadius, mRadius, src.cols, src.rows));
-			src.copyTo(c);
-			for( int i = 0 ; i < src.cols ; i ++ ) {
-				for( int j = 0 ; j < src.rows ; j ++ ) {
-					center = dst.at<Vec3b>(j+mRadius, i+mRadius);
-					Mat roi(dst, Rect(i, j, mRadius*2, mRadius*2));
-					copyColor(mROI, roi, center);
-					getCenterPointPortrait( mROI, mRadius, mRadius );
-					stringstream sk;
-					sk<< j;
-					imwrite( (sk.str()+string("-roi.png")).c_str(), mROI );
-					Mat m = mPortraits.toMat().reshape(0, 1);
-					imwrite( (sk.str()+string("-roi-p.png")).c_str(), m );
-					if( mWrapper ) {
-						r = mWrapper->find(mPortraits);
-					}
-						
-					mOutput.push_back(mPortraits);
-					mPoints.push_back(Point(i,j));
-				}
-			}
+			doPortraitBase( src );
+			//for( int i = 0 ; i < src.cols ; i ++ ) {
+			//	for( int j = 0 ; j < src.rows ; j ++ ) {
+			//		color = src.at<Vec3b>(j, i);
+			//		Mat roi(dst, Rect(i, j, mRadius*2, mRadius*2));
+			//		copyColor(mROI, roi, color);
+			//		getCenterPointPortrait( mROI, mRadius, mRadius );						
+			//		mOutput.push_back(mPortraits);
+			//		mPoints.push_back(Point(i,j));
+			//	}
+			//}
 		}
 		return mOutput;
 	};

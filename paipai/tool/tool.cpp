@@ -33,6 +33,32 @@ int _tmain(int argc, _TCHAR* argv[])
 		{"8.png"},
 		{"9.png"},
 	};
+
+	//Mat m9 = imread("09.png" );
+	//Mat m92;
+	//m9.convertTo(m92, CV_8UC3);
+	//Mat m9lp = Mat::zeros(12, 5, CV_8UC3);
+	//CvMat m9c = m92;
+	//CvMat m9lpc = m9lp;
+	//cvLogPolar(&m9c, &m9lpc, cvPoint2D32f(21, 21), 1, CV_INTER_LINEAR);
+	//imwrite("debug09.png", m9lp);
+	//only floor of mx is about integer, point could be drawed on logpolar
+	//or none point of logpolar
+	//e.g. point(28,center) could be show with mx[2](M=1) or mx[4](M=2)
+	//point(27,center) none be showed
+	//M more biger, logpolar more linear polar.
+	//mx[0]	22.000000	float
+	//mx[1]	23.718283	float
+	//mx[2]	28.389055	float
+	//mx[3]	41.085537	float
+	//mx[3]	75.598244	float
+	//2.718283
+	//mx[0]	22.000000	float
+	//mx[1]	21.648721	float
+	//mx[2]	23.718283	float
+	//mx[3]	25.481691	float
+	//mx[4]	28.389055	float
+
 	loader lo(ORIGIN);
 	lo.addFont(L"华文彩云.ttf",L"华文彩云");
 	lo.addFont(L"微软vista宋体.ttf",L"SimSun-ExtB");
@@ -40,6 +66,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	lo.handle();
 	lo.getFontCharSet(0);
 	lo.saveImage();
+
+
 
 	classifier clsr;
 	wrapper* wpp = clsr.getSC( lo, 11 );
