@@ -254,14 +254,14 @@ int _tmain(int argc, _TCHAR* argv[])
 	DBGINF("Attach an interface");
 
 	ip_addr_t tapIP, tapNetmask, tapGw;
-#ifdef USE_DHCP
+#ifdef CANC
 	IP4_ADDR(&tapIP,		0,0,0,0);
 	IP4_ADDR(&tapGw,		0,0,0,0);
 	IP4_ADDR(&tapNetmask,	255,255,255,255);
 #else
-	IP4_ADDR(&tapIP,		91,121,0,2);
-	IP4_ADDR(&tapGw,		91,121,0,1);
-	IP4_ADDR(&tapNetmask,	255,255,0,0);
+	IP4_ADDR(&tapIP,		192,168,8,2);
+	IP4_ADDR(&tapGw,		192,168,8,1);
+	IP4_ADDR(&tapNetmask,	255,255,255,0);
 #endif
 
 	// Declare our TAP interface

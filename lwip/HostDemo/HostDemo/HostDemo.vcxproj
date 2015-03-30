@@ -1,0 +1,199 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{6FCE804C-2649-4F8E-AA1B-3E0FE3C1AF13}</ProjectGuid>
+    <RootNamespace>HostDemo</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)_Bin_\$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)_Inter_\$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)_Bin_\$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)_Inter_\$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(SolutionDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <AdditionalIncludeDirectories>$(SolutionDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="lwIP\def.c" />
+    <ClCompile Include="lwIP\dhcp.c" />
+    <ClCompile Include="lwIP\dns.c" />
+    <ClCompile Include="lwIP\init.c" />
+    <ClCompile Include="lwIP\mem.c" />
+    <ClCompile Include="lwIP\memp.c" />
+    <ClCompile Include="lwIP\netif.c" />
+    <ClCompile Include="lwIP\pbuf.c" />
+    <ClCompile Include="lwIP\raw.c" />
+    <ClCompile Include="lwIP\stats.c" />
+    <ClCompile Include="lwIP\sys.c" />
+    <ClCompile Include="lwIP\tcp.c" />
+    <ClCompile Include="lwIP\tcp_in.c" />
+    <ClCompile Include="lwIP\tcp_out.c" />
+    <ClCompile Include="lwIP\timers.c" />
+    <ClCompile Include="lwIP\udp.c" />
+    <ClCompile Include="lwIP\ipv4\autoip.c" />
+    <ClCompile Include="lwIP\ipv4\icmp.c" />
+    <ClCompile Include="lwIP\ipv4\igmp.c" />
+    <ClCompile Include="lwIP\ipv4\inet.c" />
+    <ClCompile Include="lwIP\ipv4\inet_chksum.c" />
+    <ClCompile Include="lwIP\ipv4\ip.c" />
+    <ClCompile Include="lwIP\ipv4\ip_addr.c" />
+    <ClCompile Include="lwIP\ipv4\ip_frag.c" />
+    <ClCompile Include="lwIP\snmp\asn1_dec.c" />
+    <ClCompile Include="lwIP\snmp\asn1_enc.c" />
+    <ClCompile Include="lwIP\snmp\mib2.c" />
+    <ClCompile Include="lwIP\snmp\mib_structs.c" />
+    <ClCompile Include="lwIP\snmp\msg_in.c" />
+    <ClCompile Include="lwIP\snmp\msg_out.c" />
+    <ClCompile Include="lwIP\api\api_lib.c" />
+    <ClCompile Include="lwIP\api\api_msg.c" />
+    <ClCompile Include="lwIP\api\err.c" />
+    <ClCompile Include="lwIP\api\netbuf.c" />
+    <ClCompile Include="lwIP\api\netdb.c" />
+    <ClCompile Include="lwIP\api\netifapi.c" />
+    <ClCompile Include="lwIP\api\sockets.c" />
+    <ClCompile Include="lwIP\api\tcpip.c" />
+    <ClCompile Include="lwIP\netif\etharp.c" />
+    <ClCompile Include="EchoServer.cpp" />
+    <ClCompile Include="HostDemo.cpp" />
+    <ClCompile Include="TapWin32.cpp" />
+    <ClCompile Include="log.cpp" />
+    <ClCompile Include="logHResult.cpp" />
+    <ClCompile Include="logWinError.cpp" />
+    <ClCompile Include="archMBox.cpp" />
+    <ClCompile Include="archMutex.cpp" />
+    <ClCompile Include="archSemaphore.cpp" />
+    <ClCompile Include="archThread.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\include\lwipopts.h" />
+    <ClInclude Include="..\include\arch\bpstruct.h" />
+    <ClInclude Include="..\include\arch\cc.h" />
+    <ClInclude Include="..\include\arch\epstruct.h" />
+    <ClInclude Include="..\include\arch\perf.h" />
+    <ClInclude Include="..\include\arch\sys_arch.h" />
+    <ClInclude Include="..\include\lwip\api.h" />
+    <ClInclude Include="..\include\lwip\api_msg.h" />
+    <ClInclude Include="..\include\lwip\arch.h" />
+    <ClInclude Include="..\include\lwip\autoip.h" />
+    <ClInclude Include="..\include\lwip\debug.h" />
+    <ClInclude Include="..\include\lwip\def.h" />
+    <ClInclude Include="..\include\lwip\dhcp.h" />
+    <ClInclude Include="..\include\lwip\dns.h" />
+    <ClInclude Include="..\include\lwip\err.h" />
+    <ClInclude Include="..\include\lwip\icmp.h" />
+    <ClInclude Include="..\include\lwip\igmp.h" />
+    <ClInclude Include="..\include\lwip\inet.h" />
+    <ClInclude Include="..\include\lwip\inet_chksum.h" />
+    <ClInclude Include="..\include\lwip\init.h" />
+    <ClInclude Include="..\include\lwip\ip.h" />
+    <ClInclude Include="..\include\lwip\ip_addr.h" />
+    <ClInclude Include="..\include\lwip\ip_frag.h" />
+    <ClInclude Include="..\include\lwip\mem.h" />
+    <ClInclude Include="..\include\lwip\memp.h" />
+    <ClInclude Include="..\include\lwip\memp_std.h" />
+    <ClInclude Include="..\include\lwip\netbuf.h" />
+    <ClInclude Include="..\include\lwip\netdb.h" />
+    <ClInclude Include="..\include\lwip\netif.h" />
+    <ClInclude Include="..\include\lwip\netifapi.h" />
+    <ClInclude Include="..\include\lwip\opt.h" />
+    <ClInclude Include="..\include\lwip\pbuf.h" />
+    <ClInclude Include="..\include\lwip\raw.h" />
+    <ClInclude Include="..\include\lwip\sio.h" />
+    <ClInclude Include="..\include\lwip\snmp.h" />
+    <ClInclude Include="..\include\lwip\snmp_asn1.h" />
+    <ClInclude Include="..\include\lwip\snmp_msg.h" />
+    <ClInclude Include="..\include\lwip\snmp_structs.h" />
+    <ClInclude Include="..\include\lwip\sockets.h" />
+    <ClInclude Include="..\include\lwip\stats.h" />
+    <ClInclude Include="..\include\lwip\sys.h" />
+    <ClInclude Include="..\include\lwip\tcp.h" />
+    <ClInclude Include="..\include\lwip\tcp_impl.h" />
+    <ClInclude Include="..\include\lwip\tcpip.h" />
+    <ClInclude Include="..\include\lwip\timers.h" />
+    <ClInclude Include="..\include\lwip\udp.h" />
+    <ClInclude Include="..\include\netif\etharp.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="TapWin32.h" />
+    <ClInclude Include="log.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
