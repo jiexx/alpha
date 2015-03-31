@@ -53,6 +53,83 @@
 /* obsoletes TAP_IOCTL_CONFIG_POINT_TO_POINT */
 #define TAP_IOCTL_CONFIG_TUN            TAP_CONTROL_CODE (10, METHOD_BUFFERED)
 
+int execve (const wchar_t *a, int cnt, ...)
+{
+	int ret = -1;
+	static bool exec_warn = false;
+
+	if (a)
+	{
+		STARTUPINFOW start_info;
+		PROCESS_INFORMATION proc_info;
+
+		WCHAR cl[1024] = {0};
+		WCHAR cmd[] = {L"command"};
+		TCHAR windir[MAX_PATH];
+		GetWindowsDirectory(windir, MAX_PATH);
+		wsprintf( cl, L"%s\\system32\\%s", windir, a);
+		va_list valist;
+		va_start(valist, cnt); 
+		for(int i = 0; i < cnt; i++)
+		{
+			wchar_t* value = va_arg(valist,wchar_t*);
+			wcscat( cl, value );
+		}
+		va_end(valist);
+
+		/* this allows console programs to run, and is ignored otherwise */
+		DWORD proc_flags = CREATE_NO_WINDOW;
+
+		memset(&start_info, 0, sizeof(start_info));
+		memset(&proc_info, 0, sizeof(proc_info));
+
+		/* fill in STARTUPINFO struct */
+		GetStartupInfoW(&start_info);
+		start_info.cb = sizeof(start_info);
+		start_info.dwFlags = STARTF_USESHOWWINDOW;
+		start_info.wShowWindow = SW_HIDE;
+		if (ret = CreateProcessW (cmd, cl, NULL, NULL, FALSE, proc_flags, NULL, NULL, &start_info, &proc_info))
+		{
+			DWORD exit_status = 0;
+			CloseHandle (proc_info.hThread);
+			WaitForSingleObject (proc_info.hProcess, INFINITE);
+			if (GetExitCodeProcess (proc_info.hProcess, &exit_status))
+				ret = (int)exit_status;
+			else
+				DBGERR("execve: GetExitCodeProcess {0} failed") % a;
+			CloseHandle (proc_info.hProcess);
+		}
+		else
+		{
+			DBGINF("execve: change ip success");
+		}
+	}
+	else
+	{
+		DBGERR("execve: {0} args invalid.") % a;
+	}
+	return ret;
+}
+
+static wchar_t g_name[64];
+inline int get_tap_name( wchar_t* id, wchar_t* name ) {
+	wchar_t subKeyName[1024];
+	wcscpy(subKeyName,L"SYSTEM\\CurrentControlSet\\Control\\Network\\{4D36E972-E325-11CE-BFC1-08002BE10318}\\");
+	wcscat(subKeyName,id);
+	wcscat(subKeyName,L"\\Connection");
+	DWORD szValue = 64;
+
+	HKEY hkCnxInf;
+	if(RegOpenKeyExW(HKEY_LOCAL_MACHINE,subKeyName,0,KEY_READ,&hkCnxInf)) return 1;
+
+	if(RegQueryValueExW(hkCnxInf,L"Name",NULL,NULL,(LPBYTE)name,&szValue)) 
+	{
+		RegCloseKey(hkCnxInf);
+		return 1;
+	}
+	RegCloseKey(hkCnxInf);
+	return 0;
+}
 
 HTAP OpenTapInterface(const char *Name,const unsigned char MacAddr[6])
 {
@@ -82,29 +159,18 @@ HTAP OpenTapInterface(const char *Name,const unsigned char MacAddr[6])
 
 		DWORD szValue = sizeof(value);
 		if(RegQueryValueExW(hkInf,L"ComponentId",NULL,NULL,(LPBYTE)value,&szValue)) goto contSearch;
-		if(szValue<8 || _wcsnicmp(value,L"tap0",4)) continue; // Not a TAP
+		if(szValue<8 || _wcsnicmp(value,L"tap0901",4)) continue; // Not a TAP
 
 		szValue = sizeof(id);
 		if(RegQueryValueEx(hkInf,L"NetCfgInstanceId",NULL,NULL,(LPBYTE)id,&szValue)) goto contSearch;
 
 		if(*wName)
 		{
-			wchar_t subKeyName[1024];
-			wcscpy(subKeyName,L"SYSTEM\\CurrentControlSet\\Control\\Network\\{4D36E972-E325-11CE-BFC1-08002BE10318}\\");
-			wcscat(subKeyName,id);
-			wcscat(subKeyName,L"\\Connection");
-			szValue = sizeof(value);
-
-			HKEY hkCnxInf;
-			if(RegOpenKeyExW(HKEY_LOCAL_MACHINE,subKeyName,0,KEY_READ,&hkCnxInf)) continue;
-
-			if(RegQueryValueExW(hkCnxInf,L"Name",NULL,NULL,(LPBYTE)value,&szValue)) 
+			if(get_tap_name(id, wName))
 			{
-				RegCloseKey(hkCnxInf);
 				goto contSearch;
 			}
-			RegCloseKey(hkCnxInf);
-			if(!_wcsicmp(value,wName)) 
+			if(!_wcsicmp(value, wName)) 
 			{
 				RegCloseKey(hkInf);
 				found =true;
@@ -150,6 +216,10 @@ contSearch:
 		CloseHandle(hTap);
 		return NULL;
 	}
+	wchar_t tap_name[64] = {0};
+	get_tap_name(id, tap_name);
+	wsprintf(g_name, L"\"%s\"", tap_name);
+	//execve(L"netsh interface ip set address ", 2, wName, L" static 192.168.8.2");
 
 	return (HTAP)hTap;
 }
@@ -162,6 +232,10 @@ bool ChangeMediaStatus(HTAP hTap,bool status)
 	{
 		fprintf(stderr,"Unable to change media status\n");
 		return false;
+	}
+	if( g_name[0] ) {
+		execve(L"netsh interface ip set address ", 2, g_name, L" static 192.168.8.2");
+		g_name[0] = 0;
 	}
 	return true;
 }

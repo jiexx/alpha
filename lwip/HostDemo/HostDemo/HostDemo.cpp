@@ -191,6 +191,7 @@ static DWORD __stdcall TapPollThread(void *param)
 	}
 }	
 
+
 //-----------------------------------------------------------------------------
 // Initialize the TAP interface (called by lwIP)
 static err_t netif_tap_init(struct netif *netif)
@@ -231,7 +232,7 @@ static err_t netif_tap_init(struct netif *netif)
 	return ERR_OK;
 }
 
-#define USE_DHCP
+#undef USE_DHCP
 
 int _tmain(int argc, _TCHAR* argv[])
 {
@@ -254,7 +255,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	DBGINF("Attach an interface");
 
 	ip_addr_t tapIP, tapNetmask, tapGw;
-#ifdef CANC
+#ifdef USE_DHCP
 	IP4_ADDR(&tapIP,		0,0,0,0);
 	IP4_ADDR(&tapGw,		0,0,0,0);
 	IP4_ADDR(&tapNetmask,	255,255,255,255);
