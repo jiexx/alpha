@@ -88,7 +88,7 @@ int execve (const wchar_t *a, int cnt, ...)
 		start_info.cb = sizeof(start_info);
 		start_info.dwFlags = STARTF_USESHOWWINDOW;
 		start_info.wShowWindow = SW_HIDE;
-		if (ret = CreateProcessW (cmd, cl, NULL, NULL, FALSE, proc_flags, NULL, NULL, &start_info, &proc_info))
+		/*if (ret = CreateProcessW (cmd, cl, NULL, NULL, FALSE, proc_flags, NULL, NULL, &start_info, &proc_info))
 		{
 			DWORD exit_status = 0;
 			CloseHandle (proc_info.hThread);
@@ -102,7 +102,7 @@ int execve (const wchar_t *a, int cnt, ...)
 		else
 		{
 			DBGINF("execve: change ip success");
-		}
+		}*/
 	}
 	else
 	{
@@ -234,7 +234,7 @@ bool ChangeMediaStatus(HTAP hTap,bool status)
 		return false;
 	}
 	if( g_name[0] ) {
-		execve(L"netsh interface ip set address ", 2, g_name, L" static 192.168.8.2");
+		execve(L"netsh interface ip set address ", 2, g_name, L" static 192.168.8.2 255.255.255.0 192.168.8.1 1");//static 192.168.8.2");//static 192.168.8.2 255.255.255.0 none
 		g_name[0] = 0;
 	}
 	return true;

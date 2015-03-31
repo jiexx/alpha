@@ -39,10 +39,10 @@ extern	void _lwip_dbgtextout(const char *format,...);
 
 #ifdef _DEBUG
 # define TCP_DEBUG      LWIP_DBG_ON
-# define NETIF_DEBUG	LWIP_DBG_OFF
+# define NETIF_DEBUG	LWIP_DBG_ON//LWIP_DBG_OFF
 # define ETHARP_DEBUG	LWIP_DBG_OFF
 # define DHCP_DEBUG		LWIP_DBG_ON
-# define IP_DEBUG		LWIP_DBG_OFF
+# define IP_DEBUG		LWIP_DBG_ON//LWIP_DBG_OFF
 # define TCPIP_DEBUG	LWIP_DBG_ON
 # define API_LIB_DEBUG	LWIP_DBG_ON
 #else
