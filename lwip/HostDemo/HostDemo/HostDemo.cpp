@@ -260,7 +260,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	IP4_ADDR(&tapGw,		0,0,0,0);
 	IP4_ADDR(&tapNetmask,	255,255,255,255);
 #else
-	IP4_ADDR(&tapIP,		192,168,8,2);
+	IP4_ADDR(&tapIP,		192,168,8,5);
 	IP4_ADDR(&tapGw,		192,168,8,1);
 	IP4_ADDR(&tapNetmask,	255,255,255,0);
 #endif
