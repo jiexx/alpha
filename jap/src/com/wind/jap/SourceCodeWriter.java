@@ -7,6 +7,7 @@ import java.io.Writer;
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.FilerException;
 import javax.lang.model.element.Element;
+import javax.lang.model.util.Elements;
 import javax.tools.JavaFileObject;
 
 
@@ -20,7 +21,8 @@ public class SourceCodeWriter extends CodeWriter {
 
 	private static final VoidOutputStream VOID_OUTPUT_STREAM = new VoidOutputStream();
 	private final Filer filer;
-	private final JCodeModel codeModel;
+	private Elements eltUtils;
+	private String className; 
 
 	private static class VoidOutputStream extends OutputStream {
 		@Override
@@ -29,9 +31,9 @@ public class SourceCodeWriter extends CodeWriter {
 		}
 	}
 
-	public SourceCodeWriter(Filer filer, JCodeModel cm) {
+	public SourceCodeWriter(Filer filer, Elements util) {
 		this.filer = filer;
-		this.codeModel = cm;
+		this.eltUtils = util;
 	}
 
 	@Override
@@ -40,43 +42,7 @@ public class SourceCodeWriter extends CodeWriter {
 
 		try {
 			JavaFileObject sourceFile;
-
-			sourceFile = filer.createSourceFile(qualifiedClassName);
-			Writer writer =  ((JavaFileObject)filer.createSourceFile(qualifiedClassName)).openWriter();
-			
-			JDefinedClass jdc;
-			jdc.owner()._class(fullyqualifiedName);
-			
-			writer.write("public class " + generatedClassName + " {\n");
-
-			writer.write("\tpublic static " + className	+ " process(String[] args) {\n");
-
-			writer.write("\t\t" + className + " options = new " + className
-					+ "();\n");
-			writer.write("\t\tint idx = 0;\n");
-
-			writer.write("\t\twhile (idx < args.length) {\n");
-
-			for (String key : values.keySet()) {
-				writer.write("\t\t\tif (args[idx].equals(\"" + key + "\")) {\n");
-				writer.write("\t\t\t\toptions." + values.get(key)
-						+ " = args[++idx];\n");
-				writer.write("\t\t\t\tidx++;\n");
-				writer.write("\t\t\t\tcontinue;\n");
-				writer.write("\t\t\t}\n");
-			}
-
-			writer.write("\t\t\tSystem.err.println(\"Unknown option: \" + args[idx++]);\n");
-
-			writer.write("\t\t}\n");
-
-			writer.write("\t\treturn (options);\n");
-			writer.write("\t}\n");
-
-			writer.write("}");
-			writer.flush();
-			writer.close();
-			
+			sourceFile = filer.createSourceFile(qualifiedClassName, eltUtils.getTypeElement(className));
 			return sourceFile.openOutputStream();
 		} catch (FilerException e) {
 			return VOID_OUTPUT_STREAM;
@@ -85,7 +51,7 @@ public class SourceCodeWriter extends CodeWriter {
 
 	private String toQualifiedClassName(JPackage pkg, String fileName) {
 		int suffixPosition = fileName.lastIndexOf('.');
-		String className = fileName.substring(0, suffixPosition);
+		className = fileName.substring(0, suffixPosition);
 
 		String qualifiedClassName = pkg.name() + "." + className;
 		return qualifiedClassName;

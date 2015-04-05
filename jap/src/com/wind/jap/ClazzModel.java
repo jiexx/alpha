@@ -1,0 +1,129 @@
+package com.wind.jap;
+
+import java.io.IOException;
+import java.lang.annotation.ElementType;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.Map.Entry;
+
+import javax.lang.model.element.Element;
+
+import com.sun.codemodel.ClassType;
+import com.sun.codemodel.JClassAlreadyExistsException;
+import com.sun.codemodel.JCodeModel;
+import com.sun.codemodel.JDefinedClass;
+import com.sun.codemodel.JExpr;
+import com.sun.codemodel.JFieldVar;
+import com.sun.codemodel.JMethod;
+import com.sun.codemodel.JMod;
+import com.sun.codemodel.JSwitch;
+import com.sun.codemodel.writer.PrologCodeWriter;
+import com.wind.ui.ACTIVITY;
+import com.wind.ui.POST;
+import com.wind.ui.RECV;
+import com.wind.ui.UITHREAD;
+
+
+public class ClazzModel {
+	/**
+	 * Global var.
+	 */
+	private JDefinedClass dc = null;
+	private JCodeModel cm = null;
+	private String pkg;
+	private Class<?> cls;
+	private JSwitch  hdl_swc = null;
+	private JFieldVar hdl = null;
+	public ClazzModel() {
+		generators = new HashMap<String, Generator>();
+		generators.put( "ACTIVITY", new ACTIVITYGenerator() );
+		generators.put( "POST", 	new POSTGenerator() );
+		generators.put( "RECV", 	new RECVGenerator() );
+		generators.put( "UITHREAD", new UITHREADGenerator() );
+	}
+	public static Set<String> getSupportedAnnotationTypes() {
+		Set<String> annotataions = new LinkedHashSet<String>();
+		annotataions.add(ACTIVITY.class.getCanonicalName());
+		annotataions.add(POST.class.getCanonicalName());
+		annotataions.add(RECV.class.getCanonicalName());
+		annotataions.add(UITHREAD.class.getCanonicalName());
+		return annotataions;
+	}
+	public void start(String p, Class<?> t) {
+		cm = new JCodeModel();
+		pkg = p;
+		cls = t;
+	}
+	public JCodeModel self() {
+		if( cm == null )
+			cm = new JCodeModel();
+		return cm;
+	}
+	public JDefinedClass clazz() throws JClassAlreadyExistsException {
+		if( dc == null ){
+			dc = cm._class(JMod.PUBLIC, pkg+cls.getClass().getSimpleName(), ClassType.CLASS);
+			dc._extends(cls.getClass());
+		}
+		return dc;
+	}
+	public int incCountOfPOST() {
+		return 0;
+	}
+	public String getNameOfRECVByPOST( String name ) {
+		return "";
+	}
+	public JFieldVar HANDLERVAR() throws ClassNotFoundException{
+		if( hdl == null )
+			hdl = dc.field(JMod.PRIVATE + JMod.FINAL, cm.parseType("Handler"), "evtHandler", JExpr._new(cm.parseType("uiHandler")));
+		return hdl;
+	}
+	/**
+	 * only one handler
+	 * @return
+	 */
+	public JSwitch  HANDLERSWC(){
+		try {
+			if( hdl_swc == null ) {
+				JDefinedClass sc = dc._class(JMod.PRIVATE, "uiHandler", ClassType.CLASS)._extends(cm.parseType("Handler").getClass());
+				JMethod handleMessage = sc.method(JMod.PUBLIC, cm.parseType("void"), "handleMessage");
+				handleMessage.param(cm.parseType("Message"), "msg");
+				
+				JMethod onMessage = dc.method(JMod.PUBLIC, cm.parseType("void"), "handleMessage");
+				onMessage.param(cm.parseType("Message"), "msg");
+				hdl_swc = onMessage.body()._switch(JExpr.ref("msg").ref("what"));
+			}
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			Logger.e(e.getMessage());
+		} catch (JClassAlreadyExistsException e) {
+			// TODO Auto-generated catch block
+			Logger.e(e.getMessage());
+		}
+		return hdl_swc;
+	}
+	private Map<String, Generator> generators = null;
+	public boolean checkIn( String annotationName, Argument args ) {
+		Generator g = generators.get(annotationName);
+		if( g != null )
+			return g.checkIn(args);
+		return false;
+	}
+	public void generate() {
+		for( Entry<String, Generator> entry : generators.entrySet() ) {
+			entry.getValue().generate(this);
+		}
+	}
+	public void build(PrologCodeWriter proglogCodeWriter, SourceCodeWriter sourceCodeWriter) {
+		// TODO Auto-generated method stub
+		try {
+			if( cm != null )
+				cm.build(proglogCodeWriter, sourceCodeWriter);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			Logger.e(e.getMessage());
+		}
+	}
+	
+}

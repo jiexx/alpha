@@ -1,6 +1,21 @@
 package com.wind.jap;
 
-import com.sun.codemodel.ClassType;
+import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.lang.annotation.ElementType;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Map.Entry;
+
+import javax.annotation.processing.RoundEnvironment;
+import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Elements;
+
 import com.sun.codemodel.JClassAlreadyExistsException;
 import com.sun.codemodel.JCodeModel;
 import com.sun.codemodel.JDefinedClass;
@@ -9,72 +24,45 @@ import com.sun.codemodel.JFieldVar;
 import com.sun.codemodel.JMethod;
 import com.sun.codemodel.JMod;
 import com.sun.codemodel.JSwitch;
+import com.sun.codemodel.writer.PrologCodeWriter;
 
 
 public class CodeModel {
-	private JDefinedClass dc = null;
-	private JCodeModel cm = null;
-	private String pkg;
-	private ClassType cls;
-	private JSwitch  hdl_swc = null;
-	private JFieldVar hdl= null;
-	public CodeModel(String p, ClassType t) {
-		cm = new JCodeModel();
-		pkg = p;
-		cls = t;
+	/**
+	 * Global var.
+	 */
+	private Map<Class<?>, ClazzModel> clazzModels = null;
+	public CodeModel() {
+		clazzModels = new HashMap<Class<?>, ClazzModel>();
 	}
-	public JCodeModel self() {
-		if( cm == null )
-			cm = new JCodeModel();
-		return cm;
-	}
-	public JDefinedClass clazz() {
-		try {
-			if( dc == null )
-				dc = cm._class(JMod.PUBLIC, pkg+cls.getClass().getName(), cls);
-		} catch (JClassAlreadyExistsException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+	public boolean checkIn(Class<?> topLevelClazz, TypeElement annotaion, Element target) {
+		if( !clazzModels.containsKey(topLevelClazz) ){
+			clazzModels.put(topLevelClazz, new ClazzModel());
 		}
-		return dc;
-	}
-	public void add(Generator g) {
+		ClazzModel cm = clazzModels.get(topLevelClazz);
 		
-	}
-	public JCodeModel generate(){
-		return cm; 
-	}
-	public int countOfPOST() {
-		return 0;
-	}
-	public String nameOfPOST() {
-		return "";
-	}
-	public JFieldVar getHANDLERVAR(){
-		try {
-			if( hdl == null )
-				hdl = dc.field(JMod.PRIVATE + JMod.FINAL, cm.parseType("Handler"), "evtHandler", JExpr._new(cm.parseType("uiHandler")));
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return hdl;
-	}
-	public JSwitch  getHANDLERSWC(){
-		try {
-			if( hdl_swc == null ) {
-				JDefinedClass sc = dc._class(JMod.PRIVATE, "uiHandler", ClassType.CLASS)._extends(cm.parseType("Handler").getClass());
-				JMethod handleMessage = sc.method(JMod.PUBLIC, cm.parseType("void"), "handleMessage");
-				handleMessage.param(cm.parseType("Message"), "msg");
-				hdl_swc = handleMessage.body()._switch(JExpr.ref("msg").ref("what"));
+		AnnotationMirror mirror = null;
+		for( AnnotationMirror am : target.getAnnotationMirrors() ) {
+			if( am.getAnnotationType() == annotaion.asType() ){
+				mirror = am;
+				break;
 			}
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (JClassAlreadyExistsException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
-		return hdl_swc;
+		if( mirror != null && cm != null ){
+			Argument arg = new Argument(target, mirror);
+			return cm.checkIn(mirror.getAnnotationType().toString(), arg);
+		}
+		return false;
 	}
+	public String getPackageName( Class<?> clazz ) {
+		return clazz.getClass().getPackage().getName();
+	}
+	public void generate(PrologCodeWriter proglogCodeWriter, SourceCodeWriter sourceCodeWriter) {
+		for( Entry<Class<?>, ClazzModel> entry : clazzModels.entrySet() ) {
+			entry.getValue().start(getPackageName(entry.getKey()), entry.getKey());
+			entry.getValue().generate();
+			entry.getValue().build(proglogCodeWriter, sourceCodeWriter);
+		}
+	}
+	
 }
