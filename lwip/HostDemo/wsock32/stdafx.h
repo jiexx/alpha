@@ -31,31 +31,8 @@
 //.............................................................................
 //> C++ CRT
 #include <stdio.h>
-#include <tchar.h>
-#include <conio.h>
-#include <time.h>
-#include <locale.h>
-#include <malloc.h>
-#include <stdarg.h>
-
-//.... STL Library ............................................................
-#include <exception>
-#include <vector>
-#include <list>
-#include <string>
-#include <set>
-#include <map>
-#include <stack>
-#include <limits>
-#include <memory>
-#include <sstream>
-#include <algorithm>
 
 //.............................................................................
 //> Windows API includes
+#define _WINSOCKAPI_
 #include <windows.h>		// Windows main include
-#include <Strsafe.h>		// Safe string functions
-#include <ole2.h>			// OLE-2 Main Header
-#include <olectl.h>			// OLE-2 Control interfaces
-#include <objbase.h>		// COM Base API
-#include <objidl.h>			// OLE-2 IDL definition

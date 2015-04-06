@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include <fstream>
+using namespace std;
 
 #pragma comment(linker,"/export:accept=syswsock32.accept,@1")
 #pragma comment(linker,"/export:bind=syswsock32.bind,@2")
@@ -47,8 +49,8 @@
 #pragma comment(linker,"/export:WSASetLastError=syswsock32.WSASetLastError,@112")
 #pragma comment(linker,"/export:WSACancelBlockingCall=syswsock32.WSACancelBlockingCall,@113")
 #pragma comment(linker,"/export:WSAIsBlocking=syswsock32.WSAIsBlocking,@114")
-#pragma comment(linker,"/export:WSAStartup=syswsock32.WSAStartup,@115")
-#pragma comment(linker,"/export:WSACleanup=syswsock32.WSACleanup,@116")
+#pragma comment(linker,"/export:WSAStartup=_WSAStartup@8,@115")
+#pragma comment(linker,"/export:WSACleanup=_WSACleanup@0,@116")
 #pragma comment(linker,"/export:___WSAFDIsSet=syswsock32.__WSAFDIsSet,@151")
 
 
@@ -93,17 +95,20 @@ void SendData(int cmd,int len,char *pbuffer,int sendORrecv);
 
 HINSTANCE hws2_32;
 HWND ServerHwnd;
+fstream g_log;
 
 BOOL APIENTRY DllMain( HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved	)
 {
 	switch(ul_reason_for_call)
 	{
 	case DLL_PROCESS_ATTACH:
-		hws2_32=LoadLibrary(L"ws2_32.dll");
+		hws2_32=LoadLibrary(L"syswsock32.dll");
 		mySend=(PFUN)GetProcAddress(hws2_32,"send");
 		myRecv=(PFUN)GetProcAddress(hws2_32,"recv");
 		mySendto=(PFUN2)GetProcAddress(hws2_32,"sendto");
 		myRecvfrom=(PFUN2)GetProcAddress(hws2_32,"recvfrom");
+		g_log.open("log.txt", ios::out);
+		g_log << "attach ..." << endl;
 		break;
 	case DLL_PROCESS_DETACH:
 		break;
@@ -117,21 +122,64 @@ BOOL APIENTRY DllMain( HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 
 extern "C" __declspec(dllexport) int WINAPI send(int s,char *buf,int len,int flags)
 {
+	g_log.open("log.txt", ios::out);
+	g_log << "send." << endl;
 	return mySend(s,buf,len,flags);
 }
 extern "C" __declspec(dllexport) int WINAPI sendto(int s,char *buf,int len,int flags,int to,int tolen)
 {
+	g_log.open("log.txt", ios::out);
+	g_log << "sendto." << endl;
 	return mySendto(s,buf,len,flags,to,tolen);
 }
 extern "C" __declspec(dllexport) int WINAPI recv(int s,char *buf,int len,int flags)
 {
 	int rt;
+	g_log << "recv." << endl;
 	rt=myRecv(s,buf,len,flags);
 	return rt;
 }
 extern "C" __declspec(dllexport) int WINAPI recvfrom(int s,char *buf,int len,int flags,int from,int fromlen)
 {
 	int rt;
+	g_log << "recvfrom." << endl;
 	rt=myRecvfrom(s,buf,len,flags,from,fromlen);
 	return rt;
+}
+#define WSADESCRIPTION_LEN      256
+#define WSASYS_STATUS_LEN       128
+
+typedef struct WSAData {
+        WORD                    wVersion;
+        WORD                    wHighVersion;
+#ifdef _WIN64
+        unsigned short          iMaxSockets;
+        unsigned short          iMaxUdpDg;
+        char FAR *              lpVendorInfo;
+        char                    szDescription[WSADESCRIPTION_LEN+1];
+        char                    szSystemStatus[WSASYS_STATUS_LEN+1];
+#else
+        char                    szDescription[WSADESCRIPTION_LEN+1];
+        char                    szSystemStatus[WSASYS_STATUS_LEN+1];
+        unsigned short          iMaxSockets;
+        unsigned short          iMaxUdpDg;
+        char FAR *              lpVendorInfo;
+#endif
+} WSADATA;
+
+typedef WSADATA FAR *LPWSADATA;
+extern "C" __declspec(dllexport) int WINAPI WSAStartup(
+  _In_   WORD wVersionRequested,
+  _Out_  LPWSADATA lpWSAData
+)
+{
+	g_log.open("log.txt", ios::out);
+	g_log << "WSAStartup." << endl;
+	return 0;
+}
+extern "C" __declspec(dllexport) int WINAPI WSACleanup(void)
+{
+	g_log.open("log.txt", ios::out);
+	g_log << "WSACleanup." << endl;
+	return 0;
 }
