@@ -2,19 +2,15 @@ package com.wind.jap;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.Writer;
 
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.FilerException;
-import javax.lang.model.element.Element;
 import javax.lang.model.util.Elements;
 import javax.tools.JavaFileObject;
 
 
 
 import com.sun.codemodel.CodeWriter;
-import com.sun.codemodel.JCodeModel;
-import com.sun.codemodel.JDefinedClass;
 import com.sun.codemodel.JPackage;
 
 public class SourceCodeWriter extends CodeWriter {
@@ -43,6 +39,7 @@ public class SourceCodeWriter extends CodeWriter {
 		try {
 			JavaFileObject sourceFile;
 			sourceFile = filer.createSourceFile(qualifiedClassName, eltUtils.getTypeElement(className));
+			Logger.w("openBinary:" + qualifiedClassName +"  "+eltUtils.getTypeElement(className));
 			return sourceFile.openOutputStream();
 		} catch (FilerException e) {
 			return VOID_OUTPUT_STREAM;

@@ -1,0 +1,65 @@
+<project name="jar" default="compile" basedir=".">  
+	<property name="src" location="src"/>
+	<property name="build" location="jar"/>
+	<property name="libs"  location=".\libs"/>
+	<target name="init">
+		<!-- Create the time stamp -->
+		<tstamp/>
+		<!-- Create the build directory structure used by compile -->
+		<mkdir dir="${build}"/>
+	</target>
+	<target name="prepare" depends="init" description="compile all source code">  
+        <javac srcdir="${src}" destdir="${build}" includeantruntime="on">  
+			<classpath path="libs\codemodel-2.4.1.jar" />
+            <compilerarg line="-encoding gbk" />  
+        </javac>  
+    </target> 
+	<target
+		name="compile"
+		depends="prepare" >
+
+		<echo message="Jar: ${name}" />
+
+		<unzip
+			dest="${build}"
+			src="${libs}/codemodel-2.4.1.jar" >
+
+			<patternset>
+
+				<exclude name="META-INF" />
+
+				<exclude name="META-INF/MANIFEST.MF" />
+			</patternset>
+		</unzip>
+
+		<unzip
+			dest="${build}"
+			src="${libs}/android-support-v4.jar" >
+
+			<patternset>
+
+				<exclude name="META-INF" />
+
+				<exclude name="META-INF/MANIFEST.MF" />
+			</patternset>
+		</unzip>
+
+		<copy todir="${build}/META-INF/services">  
+            <fileset dir="${src}/META-INF/services" includes="*">  
+            </fileset>  
+        </copy> 
+
+		<!-- jar jarfile="${build.dir}/hive_${name}.jar" basedir="${build.classes}" / -->
+
+		<jar jarfile="jap.jar" >
+
+			<fileset
+				dir="${build}"
+				includes="**/*.class" />
+			<fileset
+				dir="${build}"
+				includes="**/*.Processor" />
+		</jar>
+
+	</target>
+</project>  

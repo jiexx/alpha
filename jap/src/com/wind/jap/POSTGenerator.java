@@ -3,6 +3,7 @@ package com.wind.jap;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.lang.String;
 
 import com.sun.codemodel.ClassType;
 import com.sun.codemodel.JClassAlreadyExistsException;
@@ -14,8 +15,6 @@ import com.sun.codemodel.JInvocation;
 import com.sun.codemodel.JMethod;
 import com.sun.codemodel.JMod;
 import com.sun.codemodel.JVar;
-import com.sun.org.apache.xpath.internal.operations.String;
-import com.wind.ui.CommunicationData;
 import com.wind.ui.CommunicationProxy;
 
 

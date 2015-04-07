@@ -1,29 +1,13 @@
 package com.wind.jap;
 
-import java.io.IOException;
-import java.lang.annotation.Annotation;
-import java.lang.annotation.ElementType;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
 
-import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.Elements;
 
-import com.sun.codemodel.JClassAlreadyExistsException;
-import com.sun.codemodel.JCodeModel;
-import com.sun.codemodel.JDefinedClass;
-import com.sun.codemodel.JExpr;
-import com.sun.codemodel.JFieldVar;
-import com.sun.codemodel.JMethod;
-import com.sun.codemodel.JMod;
-import com.sun.codemodel.JSwitch;
 import com.sun.codemodel.writer.PrologCodeWriter;
 
 
@@ -31,15 +15,16 @@ public class CodeModel {
 	/**
 	 * Global var.
 	 */
-	private Map<Class<?>, ClazzModel> clazzModels = null;
+	private Map<String, ClazzModel> clazzModels = null;
 	public CodeModel() {
-		clazzModels = new HashMap<Class<?>, ClazzModel>();
+		clazzModels = new HashMap<String, ClazzModel>();
 	}
-	public boolean checkIn(Class<?> topLevelClazz, TypeElement annotaion, Element target) {
-		if( !clazzModels.containsKey(topLevelClazz) ){
-			clazzModels.put(topLevelClazz, new ClazzModel());
+	public boolean checkIn(String topLevelClazzName, TypeElement annotaion, Element target) {
+		if( !clazzModels.containsKey(topLevelClazzName) ){
+			clazzModels.put(topLevelClazzName, new ClazzModel());
 		}
-		ClazzModel cm = clazzModels.get(topLevelClazz);
+		ClazzModel cm = clazzModels.get(topLevelClazzName);
+		Logger.w("CodeModel checkIn: topLevelClazz " + topLevelClazzName + " target " +target.getSimpleName() );
 		
 		AnnotationMirror mirror = null;
 		for( AnnotationMirror am : target.getAnnotationMirrors() ) {
@@ -50,6 +35,7 @@ public class CodeModel {
 		}
 		if( mirror != null && cm != null ){
 			Argument arg = new Argument(target, mirror);
+			Logger.w("CodeModel checkIn: annotation " + mirror.getAnnotationType().toString() + " target " +target.getSimpleName() );
 			return cm.checkIn(mirror.getAnnotationType().toString(), arg);
 		}
 		return false;
@@ -58,9 +44,10 @@ public class CodeModel {
 		return clazz.getClass().getPackage().getName();
 	}
 	public void generate(PrologCodeWriter proglogCodeWriter, SourceCodeWriter sourceCodeWriter) {
-		for( Entry<Class<?>, ClazzModel> entry : clazzModels.entrySet() ) {
+		for( Entry<String, ClazzModel> entry : clazzModels.entrySet() ) {
 			entry.getValue().start(getPackageName(entry.getKey()), entry.getKey());
 			entry.getValue().generate();
+			Logger.w("CodeModel generate: " + getPackageName(entry.getKey()) );
 			entry.getValue().build(proglogCodeWriter, sourceCodeWriter);
 		}
 	}

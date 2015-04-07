@@ -1,32 +1,25 @@
 package com.wind.jap;
 
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
+import java.io.IOException;
 import java.util.Set;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
-import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
+import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
-import javax.tools.Diagnostic.Kind;
+import javax.tools.JavaFileObject;
 
-import com.sun.codemodel.ClassType;
-import com.sun.codemodel.JCodeModel;
 import com.sun.codemodel.writer.PrologCodeWriter;
-import com.wind.ui.ACTIVITY;
-import com.wind.ui.POST;
-import com.wind.ui.RECV;
-import com.wind.ui.UITHREAD;
 
 
-
+@SupportedAnnotationTypes(value= {"*"})
+@SupportedSourceVersion(SourceVersion.RELEASE_6)
 public class Processor extends AbstractProcessor {
 	private Filer filer;
 	private CodeModel codeModel = new CodeModel();
@@ -38,10 +31,12 @@ public class Processor extends AbstractProcessor {
 		filer = processingEnv.getFiler();
 		eltUtils = processingEnv.getElementUtils(); 
 		Logger.init(processingEnv);
+		Logger.w("INIT ... ");
 	}
 
 	@Override
 	public Set<String> getSupportedAnnotationTypes() {
+		Logger.w("getSupportedAnnotationTypes ... ");
 		return ClazzModel.getSupportedAnnotationTypes();
 	}
 
@@ -49,12 +44,51 @@ public class Processor extends AbstractProcessor {
 	public SourceVersion getSupportedSourceVersion() {
 		return SourceVersion.latestSupported();
 	}
+	public boolean process2(Set<? extends TypeElement> elements, RoundEnvironment env) {
+
+		for (Element element : env.getRootElements()) {
+
+			if (element.getSimpleName().toString().startsWith("Silly")) {
+				// We don't want generate new silly classes 
+				// for auto-generated silly classes
+				continue;
+			}
+
+			if (element.getSimpleName().toString().startsWith("T")) {
+				Logger.w("process2 ... ");
+			}
+			Logger.w("process2 --- ... ");
+			String sillyClassName = "Silly" + element.getSimpleName();
+			String sillyClassContent = 
+					"package silly;\n" 
+				+	"public class " + sillyClassName + " {\n"
+				+	"	public String foobar;\n"
+				+	"}";
+
+			JavaFileObject file = null;
+
+			try {
+				file = filer.createSourceFile(
+						"silly/" + sillyClassName, 
+						element);
+				file.openWriter()
+					.append(sillyClassContent)
+					.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+		}
+
+		return true;
+	}
 	@Override
 	public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+		
 		// TODO Auto-generated method stub
 		for (TypeElement te : annotations) {
 			for (Element e : roundEnv.getElementsAnnotatedWith(te)) {
-				boolean ret = codeModel.checkIn( getTopLevelClassType(roundEnv, e), te, e);
+				boolean ret = codeModel.checkIn( getTopLevelClassName(roundEnv, e), te, e);
 				if( !ret ){
 					Logger.w("PROCESS WARNINGS: "+te.toString()+"  "+e.toString());
 				}
@@ -63,12 +97,14 @@ public class Processor extends AbstractProcessor {
 		generateProcessor(filer);
 		return (true);
 	}
-	private Class<?> getTopLevelClassType(RoundEnvironment roundEnv, Element element) {
+	private String getTopLevelClassName(RoundEnvironment roundEnv, Element element) {
 		Set<? extends Element> roots =roundEnv.getRootElements();
-		while( element != null && !roots.contains(element) ) 
+		while( element != null && !roots.contains(element) ) {
+			Logger.w("-----------getTopLevelClassType "+element.getSimpleName()+" -----------"+ element.getEnclosingElement().getSimpleName());
 			element = element.getEnclosingElement();
+		}
 		if( element != null )
-			return element.getClass();
+			return element.getSimpleName().toString();
 		return null;
 	}
 	private void generateProcessor(Filer filer) {
