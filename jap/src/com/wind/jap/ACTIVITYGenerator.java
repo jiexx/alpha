@@ -9,16 +9,21 @@ import com.sun.codemodel.JExpr;
 import com.sun.codemodel.JMethod;
 import com.sun.codemodel.JMod;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.String;
 import java.util.LinkedList;
 
 public class ACTIVITYGenerator implements Generator {
 	Argument arguments;
 	final private void METHOD_ACTIVITY_ONCREATE( JCodeModel codeMode, JDefinedClass defClazz, int index ) throws ClassNotFoundException{
+		Logger.w("				ACTIVITYGenerator "+defClazz.toString()+" "+codeMode.parseType("android.os.Bundle").toString());
 		JMethod onCreate = defClazz.method(JMod.PUBLIC, void.class, "onCreate");
-		onCreate.param(codeMode.parseType("Bundle"), "savedInstanceState"); 
+		onCreate.param(codeMode.parseType("android.os.Bundle"), "savedInstanceState"); 
+		Logger.w("				ACTIVITYGenerator 1 "+defClazz.toString());
 		onCreate.body().invoke(JExpr._super(), "onCreate").arg(JExpr.ref("savedInstanceState"));
-		onCreate.body().invoke("setContentView").arg(arguments.valueOfAnnotationParams(0).toString());
+		Logger.w("				ACTIVITYGenerator 2 "+defClazz.toString());
+		onCreate.body().invoke("setContentView").arg(JExpr.ref("test")/*arguments.valueOfAnnotationParams(0).toString()*/);
 	}
 	@Override
 	public void generate(ClazzModel cm) {
@@ -31,7 +36,14 @@ public class ACTIVITYGenerator implements Generator {
 		} catch (JClassAlreadyExistsException e) {
 			// TODO Auto-generated catch block
 			Logger.e(e.getMessage());
-		} 
+		} catch (Exception e) {
+			StringWriter sw = new StringWriter();
+	        PrintWriter pw = new PrintWriter(sw, true);
+	        e.printStackTrace(pw);
+	        pw.flush();
+	        sw.flush();
+			Logger.w("				ACTIVITYGenerator "+sw.toString());
+		}
 	}
 	@Override
 	public boolean checkIn(Argument args) {

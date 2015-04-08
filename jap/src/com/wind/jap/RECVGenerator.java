@@ -27,7 +27,7 @@ public class RECVGenerator implements Generator {
 	public void generate(ClazzModel cm) {
 		// TODO Auto-generated method stub
 		try {		
-			for( int i = 0 ; i < arguments.size() ; i ++ ){
+			for( int i = 0 ; arguments != null &&  i < arguments.size() ; i ++ ){
 				METHOD_UITHREAD_SWITCH_CASE( cm.self(), cm.clazz(), i, cm.HANDLERSWC() );
 			}
 		} catch (ClassNotFoundException e) {

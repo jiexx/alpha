@@ -27,7 +27,7 @@ public class POSTGenerator implements Generator {
 		return 0x1000+i;
 	}
 	final private JFieldVar FIELD_EVNET_ID_DECL( JCodeModel codeMode, JDefinedClass defClazz, int index ){
-		String simpleName = arguments.get(index).valueOfAnnotationParams(index).toString();
+		String simpleName = arguments.get(index).valueOfAnnotationParams(0).toString();
 		Logger.w("				POSTGenerator FIELD_EVNET_ID_DECL "+STATIC_EVNET_ID_PRIFIX+simpleName.toUpperCase()+"  "+index+" "+defClazz.fullName());
 		try {
 			return defClazz.field(JMod.PRIVATE + JMod.FINAL, codeMode.INT, STATIC_EVNET_ID_PRIFIX+simpleName.toUpperCase()+index, JExpr.lit(EVT_ID(index)));
@@ -78,7 +78,7 @@ public class POSTGenerator implements Generator {
 		Logger.w("				POSTGenerator generate: arguments.size(): "+arguments.size());
 		List<JDefinedClass> proxies = new LinkedList<JDefinedClass>();
 		try {	
-			for( int i = 0 ; i < arguments.size() ; i ++ ){
+			for( int i = 0 ; arguments != null && i < arguments.size() ; i ++ ){
 				Logger.w("				FIELD_EVNET_ID_DECL start "+i+" "+arguments.size());
 				FIELD_EVNET_ID_DECL( cm.self(), cm.clazz(), i );
 				Logger.w("				FIELD_EVNET_ID_DECL end "+i+" "+arguments.size());

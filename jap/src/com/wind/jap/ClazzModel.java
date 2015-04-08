@@ -116,10 +116,6 @@ public class ClazzModel {
 		for( Entry<String, Generator> entry : generators.entrySet() ) {
 			Logger.w("ClazzModel generate: key:"+entry.getKey()+" value:"+entry.getValue().getClass().toString());
 			entry.getValue().generate(this);
-			if( entry.getValue().equals(POSTGenerator.class) ) {
-				Logger.w("ClazzModel generate test");
-				((POSTGenerator)entry.getValue()).test();
-			}
 		}
 	}
 	public void build(PrologCodeWriter proglogCodeWriter, SourceCodeWriter sourceCodeWriter) {

@@ -1,5 +1,7 @@
 package com.wind.jap;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -19,7 +21,9 @@ import com.wind.ui.CommunicationData;
 public class UITHREADGenerator implements Generator {
 	List<Argument> arguments = null;
 	private final void METHOD_UITHREAD_SWITCH_DEFAULT( JCodeModel codeMode, JDefinedClass defClazz, int index, JSwitch swc ) throws ClassNotFoundException{
+		Logger.w("				UITHREADGenerator 1 "+defClazz);
 		Argument arg = arguments.get(index);
+		Logger.w("				UITHREADGenerator 2 "+arg.toString());
 		JCase c = swc._default();
 		JInvocation def = c.body().invoke(arg.nameOfTarget());
 		for( int i = 0 ; i < 1 ; i ++ ) {
@@ -32,7 +36,7 @@ public class UITHREADGenerator implements Generator {
 	public void generate(ClazzModel cm) {
 		// TODO Auto-generated method stub
 		try {
-			for( int i = 0 ; i < arguments.size() ; i ++ ){
+			for( int i = 0 ; arguments != null && i < arguments.size() ; i ++ ){
 				METHOD_UITHREAD_SWITCH_DEFAULT( cm.self(), cm.clazz(), i, cm.HANDLERSWC() );
 			}
 		} catch (ClassNotFoundException e) {
@@ -41,7 +45,14 @@ public class UITHREADGenerator implements Generator {
 		} catch (JClassAlreadyExistsException e) {
 			// TODO Auto-generated catch block
 			Logger.e(e.getMessage());
-		} 
+		} catch (Exception e) {
+			StringWriter sw = new StringWriter();
+	        PrintWriter pw = new PrintWriter(sw, true);
+	        e.printStackTrace(pw);
+	        pw.flush();
+	        sw.flush();
+			Logger.w("				UITHREADGenerator "+sw.toString());
+		}
 	}
 	@Override
 	public boolean checkIn(Argument args) {
