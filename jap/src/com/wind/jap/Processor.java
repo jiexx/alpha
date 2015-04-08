@@ -86,16 +86,21 @@ public class Processor extends AbstractProcessor {
 	public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
 		
 		// TODO Auto-generated method stub
+		Logger.w("PROCESS BEGIN: "+annotations.size());
+		if( annotations.size() == 0 )
+			return true;
+		
 		for (TypeElement te : annotations) {
 			for (Element e : roundEnv.getElementsAnnotatedWith(te)) {
-				boolean ret = codeModel.checkIn( getTopLevelClassName(roundEnv, e), te, e);
+				boolean ret = codeModel.checkIn( eltUtils.getPackageOf(e).getQualifiedName().toString(), getTopLevelClassName(roundEnv, e), te, e);
 				if( !ret ){
 					Logger.w("PROCESS WARNINGS: "+te.toString()+"  "+e.toString());
 				}
 			}
 		}
+		Logger.w("GENRATE BEGIN:  "+annotations.size());
 		generateProcessor(filer);
-		return (true);
+		return true;
 	}
 	private String getTopLevelClassName(RoundEnvironment roundEnv, Element element) {
 		Set<? extends Element> roots =roundEnv.getRootElements();

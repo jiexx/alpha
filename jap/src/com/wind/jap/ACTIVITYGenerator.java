@@ -10,6 +10,7 @@ import com.sun.codemodel.JMethod;
 import com.sun.codemodel.JMod;
 
 import java.lang.String;
+import java.util.LinkedList;
 
 public class ACTIVITYGenerator implements Generator {
 	Argument arguments;

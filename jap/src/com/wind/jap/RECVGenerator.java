@@ -1,6 +1,7 @@
 package com.wind.jap;
 
 
+import java.util.LinkedList;
 import java.util.List;
 
 import com.sun.codemodel.JCase;
@@ -15,7 +16,7 @@ import com.wind.ui.CommunicationData;
 
 
 public class RECVGenerator implements Generator {
-	List<Argument> arguments;
+	List<Argument> arguments = null;
 	private final void METHOD_UITHREAD_SWITCH_CASE( JCodeModel codeMode, JDefinedClass defClazz, int index, JSwitch swc ) throws ClassNotFoundException{
 		JCase c = swc._case(JExpr.ref(POSTGenerator.STATIC_EVNET_ID_PRIFIX+arguments.get(index).nameOfAnnotation().toUpperCase()));
 		JExpression data = JExpr.ref("msg").invoke("getData");
@@ -40,8 +41,11 @@ public class RECVGenerator implements Generator {
 	@Override
 	public boolean checkIn(Argument args) {
 		// TODO Auto-generated method stub
+		Logger.w("				POSTGenerator checkIn: countOfAnnotationParams: "+args.countOfAnnotationParams()+" countOfTargetParams "+args.countOfTargetParams()+" clazzOfTargetParams(0) "+args.clazzStringOfTargetParams(0));
 		if( args.countOfAnnotationParams() == 1 
-				&& args.valueOfAnnotationParams(0).getClass().equals(String.class) && args.countOfTargetParams() == 1 && args.clazzOfTargetParams(0).equals(CommunicationData.class) ){
+				&& args.valueOfAnnotationParams(0).getClass().equals(String.class) && args.countOfTargetParams() == 1 && args.clazzStringOfTargetParams(0).contains("CommunicationData") ){
+			if( arguments == null )
+				arguments = new LinkedList<Argument>();
 			arguments.add(args);
 			return true;
 		}

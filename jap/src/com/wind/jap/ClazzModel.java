@@ -8,6 +8,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import com.sun.codemodel.ClassType;
+import com.sun.codemodel.JClass;
 import com.sun.codemodel.JClassAlreadyExistsException;
 import com.sun.codemodel.JCodeModel;
 import com.sun.codemodel.JDefinedClass;
@@ -30,10 +31,11 @@ public class ClazzModel {
 	private JDefinedClass dc = null;
 	private JCodeModel cm = null;
 	private String pkg;
-	private Class<?> cls;
+	private JClass cls;
 	private JSwitch  hdl_swc = null;
 	private JFieldVar hdl = null;
-	public ClazzModel() {
+	public ClazzModel(String packageName) {
+		pkg = packageName;
 		generators = new HashMap<String, Generator>();
 		generators.put( "ACTIVITY", new ACTIVITYGenerator() );
 		generators.put( "POST", 	new POSTGenerator() );
@@ -48,10 +50,10 @@ public class ClazzModel {
 		annotataions.add(UITHREAD.class.getCanonicalName());
 		return annotataions;
 	}
-	public void start(String p, Class<?> t) {
+	public void start(String clazzName) {
 		cm = new JCodeModel();
-		pkg = p;
-		cls = t;
+		cls = cm.ref(clazzName);
+		Logger.w("ClazzModel start: " + cls.fullName() );
 	}
 	public JCodeModel self() {
 		if( cm == null )
@@ -60,8 +62,9 @@ public class ClazzModel {
 	}
 	public JDefinedClass clazz() throws JClassAlreadyExistsException {
 		if( dc == null ){
-			dc = cm._class(JMod.PUBLIC, pkg+cls.getClass().getSimpleName(), ClassType.CLASS);
-			dc._extends(cls.getClass());
+			dc = cm._class(JMod.PUBLIC, "_"+cls.fullName(), ClassType.CLASS);
+			dc._extends(cls);
+			Logger.w("ClazzModel clazz: " + cls.fullName() + " pkg:" + pkg + " " + dc.fullName() );
 		}
 		return dc;
 	}
@@ -103,13 +106,20 @@ public class ClazzModel {
 	private Map<String, Generator> generators = null;
 	public boolean checkIn( String annotationName, Argument args ) {
 		Generator g = generators.get(annotationName);
+		Logger.w("ClazzModel checkIn:" + annotationName +" " +generators.size());
 		if( g != null )
 			return g.checkIn(args);
 		return false;
 	}
 	public void generate() {
+		Logger.w("ClazzModel generate:"+generators.size());
 		for( Entry<String, Generator> entry : generators.entrySet() ) {
+			Logger.w("ClazzModel generate: key:"+entry.getKey()+" value:"+entry.getValue().getClass().toString());
 			entry.getValue().generate(this);
+			if( entry.getValue().equals(POSTGenerator.class) ) {
+				Logger.w("ClazzModel generate test");
+				((POSTGenerator)entry.getValue()).test();
+			}
 		}
 	}
 	public void build(PrologCodeWriter proglogCodeWriter, SourceCodeWriter sourceCodeWriter) {

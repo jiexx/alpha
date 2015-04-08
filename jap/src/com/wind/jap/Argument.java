@@ -61,16 +61,17 @@ public class Argument {
 		return r;
 	}
 	private List<String> targetParamNames = null;
-	private List<Class<?>> targetParamTypes = null;
+	private List<String> targetParamTypes = null;
 	public int countOfTargetParams(){
 		int count = 0;
 		if( targetParamNames == null && target.getKind() == ElementKind.METHOD ) {
 			targetParamNames = new LinkedList<String>();
-			targetParamTypes = new LinkedList<Class<?>>();
+			targetParamTypes = new LinkedList<String>();
 			ExecutableElement method = (ExecutableElement) target;
 			for( VariableElement param : method.getParameters() ) {
 				targetParamNames.add(param.getSimpleName().toString());
-				targetParamTypes.add(param.getClass());
+				targetParamTypes.add(param.asType().toString());
+				Logger.w("				Argument : targetParamNames:"+param.getSimpleName().toString()+" targetParamTypes:"+param.asType());
 			}
 			count = targetParamNames.size();
 		}
@@ -80,12 +81,13 @@ public class Argument {
 		countOfTargetParams();
 		return targetParamNames.get(index);
 	}
-	public Class<?> clazzOfTargetParams( int index ) {
+	public String clazzStringOfTargetParams( int index ) {
 		countOfTargetParams();
 		return targetParamTypes.get(index);
 	}
 	public String nameOfAnnotation() {
-		return mirror.getAnnotationType().getClass().getSimpleName();
+		Logger.w("				Argument :getAnnotationType():"+mirror.getAnnotationType()+" asElement():"+mirror.getAnnotationType().asElement()+" asType():"+mirror.getAnnotationType().asElement().asType());
+		return mirror.getAnnotationType().asElement().asType().toString();
 	}
 	/** Map<parameter , value> 
 	 * @return 
@@ -106,6 +108,9 @@ public class Argument {
 				annotationParamNames.add( entry.getKey().getSimpleName().toString() );
 				annotationParamTypes.add( entry.getKey().asType().toString());
 				annotationParamValues.add( entry.getValue().getValue() );
+				Logger.w("				Argument : annotationParamNames:"+entry.getKey().getSimpleName().toString()
+						+" annotationParamTypes:"+entry.getKey().asType().toString()
+						+" annotationParamValues:"+entry.getValue().getValue());
 			}
 		}
 		return annotationParamNames.size();
@@ -116,7 +121,7 @@ public class Argument {
 	}
 	public Object valueOfAnnotationParams( int index ) {
 		countOfAnnotationParams();
-		return annotationParamNames.get(index);
+		return annotationParamValues.get(index);
 	}
 
 }

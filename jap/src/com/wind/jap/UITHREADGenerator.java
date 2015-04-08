@@ -1,5 +1,6 @@
 package com.wind.jap;
 
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.lang.model.element.ElementKind;
@@ -16,7 +17,7 @@ import com.wind.ui.CommunicationData;
 
 
 public class UITHREADGenerator implements Generator {
-	List<Argument> arguments;
+	List<Argument> arguments = null;
 	private final void METHOD_UITHREAD_SWITCH_DEFAULT( JCodeModel codeMode, JDefinedClass defClazz, int index, JSwitch swc ) throws ClassNotFoundException{
 		Argument arg = arguments.get(index);
 		JCase c = swc._default();
@@ -45,7 +46,9 @@ public class UITHREADGenerator implements Generator {
 	@Override
 	public boolean checkIn(Argument args) {
 		// TODO Auto-generated method stub
-		if( args.countOfAnnotationParams() == 0 && args.kindOfTarget() == ElementKind.METHOD && args.countOfTargetParams() == 1 && args.clazzOfTargetParams(0).equals(CommunicationData.class)){
+		if( args.countOfAnnotationParams() == 0 && args.kindOfTarget() == ElementKind.METHOD && args.countOfTargetParams() == 1 && args.clazzStringOfTargetParams(0).contains("CommunicationData")){
+			if( arguments == null )
+				arguments = new LinkedList<Argument>();
 			arguments.add(args);
 			return true;
 		}
