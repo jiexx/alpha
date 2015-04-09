@@ -3,7 +3,7 @@ package com.wind.ui;
 import java.lang.annotation.*;
 
 /**
-  * annotate request method, it can be called anywhere in class.
+  * annotate response method, it will be called after request if result returned by server.
   * 
   * @author jluo
   * @date 2015-4-1
@@ -11,11 +11,10 @@ import java.lang.annotation.*;
  @Target(ElementType.METHOD)
  @Retention(RetentionPolicy.SOURCE)
  @Documented
- public @interface POST {
+ public @interface RECV {
     /*
-	 *The name of POST must be same with RECV
+	 *The name of RECV must be same with POST
 	 *@return
 	 */
-	 String value() default "";
-	 
+	String value() default "";
  }

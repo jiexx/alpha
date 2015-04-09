@@ -41,7 +41,8 @@ public class Argument {
 		return target.getSimpleName().toString();
 	}
 	public String typeOfTarget() {
-		return target.asType().toString();
+		Logger.w("				Argument : getSimpleName:"+Processor.getTypeElement(target.getSimpleName().toString())+" asType:"+target.asType());
+		return Processor.getTypeElement(target.getSimpleName().toString()).toString();
 	}
 	public ElementKind kindOfTarget() {
 		return target.getKind();
@@ -63,7 +64,6 @@ public class Argument {
 	private List<String> targetParamNames = null;
 	private List<String> targetParamTypes = null;
 	public int countOfTargetParams(){
-		int count = 0;
 		if( targetParamNames == null && target.getKind() == ElementKind.METHOD ) {
 			targetParamNames = new LinkedList<String>();
 			targetParamTypes = new LinkedList<String>();
@@ -71,11 +71,10 @@ public class Argument {
 			for( VariableElement param : method.getParameters() ) {
 				targetParamNames.add(param.getSimpleName().toString());
 				targetParamTypes.add(param.asType().toString());
-				Logger.w("				Argument : targetParamNames:"+param.getSimpleName().toString()+" targetParamTypes:"+param.asType());
 			}
-			count = targetParamNames.size();
+			targetParamNames.size();
 		}
-		return count;
+		return targetParamNames.size();
 	}
 	public String nameOfTargetParams( int index ) {
 		countOfTargetParams();
@@ -86,7 +85,6 @@ public class Argument {
 		return targetParamTypes.get(index);
 	}
 	public String nameOfAnnotation() {
-		Logger.w("				Argument :getAnnotationType():"+mirror.getAnnotationType()+" asElement():"+mirror.getAnnotationType().asElement()+" asType():"+mirror.getAnnotationType().asElement().asType());
 		return mirror.getAnnotationType().asElement().asType().toString();
 	}
 	/** Map<parameter , value> 
@@ -108,9 +106,6 @@ public class Argument {
 				annotationParamNames.add( entry.getKey().getSimpleName().toString() );
 				annotationParamTypes.add( entry.getKey().asType().toString());
 				annotationParamValues.add( entry.getValue().getValue() );
-				Logger.w("				Argument : annotationParamNames:"+entry.getKey().getSimpleName().toString()
-						+" annotationParamTypes:"+entry.getKey().asType().toString()
-						+" annotationParamValues:"+entry.getValue().getValue());
 			}
 		}
 		return annotationParamNames.size();

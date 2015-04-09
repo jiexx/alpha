@@ -1,6 +1,8 @@
 package com.wind.jap;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -23,7 +25,6 @@ import com.wind.ui.POST;
 import com.wind.ui.RECV;
 import com.wind.ui.UITHREAD;
 
-
 public class ClazzModel {
 	/**
 	 * Global var.
@@ -34,6 +35,7 @@ public class ClazzModel {
 	private JClass cls;
 	private JSwitch  hdl_swc = null;
 	private JFieldVar hdl = null;
+	private JFieldVar delegator = null;
 	public ClazzModel(String packageName) {
 		pkg = packageName;
 		generators = new HashMap<String, Generator>();
@@ -53,7 +55,9 @@ public class ClazzModel {
 	public void start(String clazzName) {
 		cm = new JCodeModel();
 		cls = cm.ref(clazzName);
-		Logger.w("ClazzModel start: " + cls.fullName() );
+		cm._package("android.os.Message");
+		cm._package("android.os.Bundle");
+		Logger.w("ClazzModel start: " + cm._package("android.os.Message").getPackage().name() +" " + cm._package("android.os.Bundle").getPackage().name() );
 	}
 	public JCodeModel self() {
 		if( cm == null )
@@ -62,9 +66,8 @@ public class ClazzModel {
 	}
 	public JDefinedClass clazz() throws JClassAlreadyExistsException {
 		if( dc == null ){
-			dc = cm._class(JMod.PUBLIC, "_"+cls.fullName(), ClassType.CLASS);
+			dc = cm._class(JMod.PUBLIC, pkg+".JAP"+cls.fullName(), ClassType.CLASS);
 			dc._extends(cls);
-			Logger.w("ClazzModel clazz: " + cls.fullName() + " pkg:" + pkg + " " + dc.fullName() );
 		}
 		return dc;
 	}
@@ -75,9 +78,18 @@ public class ClazzModel {
 		return "";
 	}
 	public JFieldVar HANDLERVAR() throws ClassNotFoundException{
-		if( hdl == null )
-			hdl = dc.field(JMod.PRIVATE + JMod.FINAL, cm.parseType("Handler"), "evtHandler", JExpr._new(cm.parseType("uiHandler")));
+		if( hdl == null ) {
+			hdl = dc.field(JMod.PRIVATE + JMod.FINAL, cm.parseType("android.os.Handler"), "evtHandler", JExpr._new(cm.ref("uiHandler")));
+			delegator = dc.field(JMod.PRIVATE + JMod.FINAL, cls, "delegator", JExpr._this());
+		}
 		return hdl;
+	}
+	public JFieldVar DELEGATORVAR() throws ClassNotFoundException{
+		if( delegator == null ) {
+			hdl = dc.field(JMod.PRIVATE + JMod.FINAL, cm.parseType("android.os.Handler"), "evtHandler", JExpr._new(cm.ref("uiHandler")));
+			delegator = dc.field(JMod.PRIVATE + JMod.FINAL, cls, "delegator", JExpr._this());
+		}
+		return delegator;
 	}
 	/**
 	 * only one handler
@@ -86,13 +98,13 @@ public class ClazzModel {
 	public JSwitch  HANDLERSWC(){
 		try {
 			if( hdl_swc == null ) {
-				JDefinedClass sc = dc._class(JMod.PRIVATE, "uiHandler", ClassType.CLASS)._extends(cm.parseType("Handler").getClass());
-				JMethod handleMessage = sc.method(JMod.PUBLIC, cm.parseType("void"), "handleMessage");
-				handleMessage.param(cm.parseType("Message"), "msg");
+				JDefinedClass sc = dc._class(JMod.PRIVATE, "uiHandler", ClassType.CLASS)._extends(cm.parseType("android.os.Handler").boxify());
 				
-				JMethod onMessage = dc.method(JMod.PUBLIC, cm.parseType("void"), "handleMessage");
-				onMessage.param(cm.parseType("Message"), "msg");
-				hdl_swc = onMessage.body()._switch(JExpr.ref("msg").ref("what"));
+				JMethod handleMessage = sc.method(JMod.PUBLIC, cm.parseType("void"), "handleMessage");
+				handleMessage.param(cm.parseType("android.os.Message"), "msg");
+				hdl_swc = handleMessage.body()._switch(JExpr.ref("msg").ref("what"));
+				
+				Logger.w("				ClazzModel HANDLERSWC: "+cm.parseType("android.os.Handler").boxify().toString());
 			}
 		} catch (ClassNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -100,6 +112,12 @@ public class ClazzModel {
 		} catch (JClassAlreadyExistsException e) {
 			// TODO Auto-generated catch block
 			Logger.e(e.getMessage());
+		} catch (Exception e) {
+			StringWriter sw = new StringWriter();
+	        PrintWriter pw = new PrintWriter(sw, true);
+	        e.printStackTrace(pw);
+	        pw.flush();
+	        sw.flush();
 		}
 		return hdl_swc;
 	}

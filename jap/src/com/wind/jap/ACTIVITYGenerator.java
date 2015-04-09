@@ -17,13 +17,10 @@ import java.util.LinkedList;
 public class ACTIVITYGenerator implements Generator {
 	Argument arguments;
 	final private void METHOD_ACTIVITY_ONCREATE( JCodeModel codeMode, JDefinedClass defClazz, int index ) throws ClassNotFoundException{
-		Logger.w("				ACTIVITYGenerator "+defClazz.toString()+" "+codeMode.parseType("android.os.Bundle").toString());
 		JMethod onCreate = defClazz.method(JMod.PUBLIC, void.class, "onCreate");
 		onCreate.param(codeMode.parseType("android.os.Bundle"), "savedInstanceState"); 
-		Logger.w("				ACTIVITYGenerator 1 "+defClazz.toString());
 		onCreate.body().invoke(JExpr._super(), "onCreate").arg(JExpr.ref("savedInstanceState"));
-		Logger.w("				ACTIVITYGenerator 2 "+defClazz.toString());
-		onCreate.body().invoke("setContentView").arg(JExpr.ref("test")/*arguments.valueOfAnnotationParams(0).toString()*/);
+		//onCreate.body().invoke("setContentView").arg(JExpr.ref("test")/*arguments.valueOfAnnotationParams(0).toString()*/);
 	}
 	@Override
 	public void generate(ClazzModel cm) {
@@ -42,7 +39,6 @@ public class ACTIVITYGenerator implements Generator {
 	        e.printStackTrace(pw);
 	        pw.flush();
 	        sw.flush();
-			Logger.w("				ACTIVITYGenerator "+sw.toString());
 		}
 	}
 	@Override

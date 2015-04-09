@@ -9,6 +9,8 @@ import java.lang.annotation.*;
   * @date 2015-4-1
   */
  @Target(ElementType.METHOD)
+ @Retention(RetentionPolicy.SOURCE)
+ @Documented
  public @interface UITHREAD {
 	 
  }

@@ -25,7 +25,7 @@ import com.sun.codemodel.writer.PrologCodeWriter;
 public class Processor extends AbstractProcessor {
 	private Filer filer;
 	private CodeModel codeModel = new CodeModel();
-	private Elements eltUtils;
+	private static Elements eltUtils = null;
 	
 	@Override
 	public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -46,44 +46,7 @@ public class Processor extends AbstractProcessor {
 	public SourceVersion getSupportedSourceVersion() {
 		return SourceVersion.latestSupported();
 	}
-	public boolean process2(Set<? extends TypeElement> elements, RoundEnvironment env) {
 
-		for (Element element : env.getRootElements()) {
-
-			if (element.getSimpleName().toString().startsWith("Silly")) {
-				// We don't want generate new silly classes 
-				// for auto-generated silly classes
-				continue;
-			}
-
-			if (element.getSimpleName().toString().startsWith("T")) {
-				Logger.w("process2 ... ");
-			}
-			Logger.w("process2 --- ... ");
-			String sillyClassName = "Silly" + element.getSimpleName();
-			String sillyClassContent = 
-					"package silly;\n" 
-				+	"public class " + sillyClassName + " {\n"
-				+	"	public String foobar;\n"
-				+	"}";
-
-			JavaFileObject file = null;
-
-			try {
-				file = filer.createSourceFile(
-						"silly/" + sillyClassName, 
-						element);
-				file.openWriter()
-					.append(sillyClassContent)
-					.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-
-		}
-
-		return true;
-	}
 	@Override
 	public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
 		
@@ -130,6 +93,9 @@ public class Processor extends AbstractProcessor {
 	        sw.flush();
 			Logger.w("				generateProcessor "+sw.toString());
 		}
-	}   
+	}
+	public static TypeElement getTypeElement(String element) {
+		return eltUtils.getTypeElement(element);
+	}
 
 }

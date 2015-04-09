@@ -18,7 +18,6 @@ public class SourceCodeWriter extends CodeWriter {
 	private static final VoidOutputStream VOID_OUTPUT_STREAM = new VoidOutputStream();
 	private final Filer filer;
 	private Elements eltUtils;
-	private String className; 
 
 	private static class VoidOutputStream extends OutputStream {
 		@Override
@@ -35,11 +34,12 @@ public class SourceCodeWriter extends CodeWriter {
 	@Override
 	public OutputStream openBinary(JPackage pkg, String fileName) throws IOException {
 		String qualifiedClassName = toQualifiedClassName(pkg, fileName);
-
+		String packageFileName = toPackageFileName(pkg, fileName);
 		try {
 			JavaFileObject sourceFile;
-			sourceFile = filer.createSourceFile(qualifiedClassName, eltUtils.getTypeElement(className));
-			Logger.w("openBinary:" + qualifiedClassName +"  "+eltUtils.getTypeElement(className));
+			Logger.w("toQualifiedClassName:" + "  |"+packageFileName+" |"+qualifiedClassName);
+			sourceFile = filer.createSourceFile(packageFileName, eltUtils.getTypeElement(qualifiedClassName));
+			
 			return sourceFile.openOutputStream();
 		} catch (FilerException e) {
 			return VOID_OUTPUT_STREAM;
@@ -48,11 +48,27 @@ public class SourceCodeWriter extends CodeWriter {
 
 	private String toQualifiedClassName(JPackage pkg, String fileName) {
 		int suffixPosition = fileName.lastIndexOf('.');
-		className = fileName.substring(0, suffixPosition);
+		int prefixPosition = "JAP".length();
+
+		String className = fileName.substring(prefixPosition, suffixPosition);
 
 		String qualifiedClassName = pkg.name() + "." + className;
+		
 		return qualifiedClassName;
 	}
+	
+	private String toPackageFileName(JPackage pkg, String fileName) {
+		String pakageName = pkg.name();
+
+		pakageName = pakageName.replace('.', '/');
+		
+		int suffixPosition = fileName.lastIndexOf('.');
+
+		String className = fileName.substring(0, suffixPosition);
+		
+		return pakageName+"/"+className;
+	}
+
 
 	@Override
 	public void close() throws IOException {

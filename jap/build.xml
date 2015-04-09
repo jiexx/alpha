@@ -10,7 +10,7 @@
 	</target>
 	<target name="prepare" depends="init" description="compile all source code">  
         <javac srcdir="${src}" destdir="${build}" includeantruntime="on">  
-			<classpath path="libs\codemodel-2.4.1.jar" />
+			<classpath path="libs\codemodel-2.4.1.jar;libs\android.jar" />
             <compilerarg line="-encoding gbk" />  
         </javac>  
     </target> 
@@ -32,17 +32,6 @@
 			</patternset>
 		</unzip>
 
-		<unzip
-			dest="${build}"
-			src="${libs}/android-support-v4.jar" >
-
-			<patternset>
-
-				<exclude name="META-INF" />
-
-				<exclude name="META-INF/MANIFEST.MF" />
-			</patternset>
-		</unzip>
 
 		<copy todir="${build}/META-INF/services">  
             <fileset dir="${src}/META-INF/services" includes="*">  
