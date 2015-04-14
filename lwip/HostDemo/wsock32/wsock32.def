@@ -1,0 +1,5 @@
+LIBRARY wsock32.dll
+
+EXPORTS 
+WSAStartup=WSAStartup @115
+WSACleanup=WSACleanup_ @116
