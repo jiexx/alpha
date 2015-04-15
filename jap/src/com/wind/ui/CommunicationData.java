@@ -4,24 +4,13 @@ import java.io.Serializable;
 
 import android.os.Bundle;
 
-public class CommunicationData {
-	public CommunicationData( String url ){
+public abstract class CommunicationData {
+	public CommunicationData( CommunicationData cd ){
 		//TO BE CUSTOMIZED
 	}
-	public CommunicationData( Bundle b ){
-		//TO BE CUSTOMIZED
-	}
-	public void setString(String url) {
-		
-	}
-	public class Data implements Serializable {
-		private static final long serialVersionUID = 1L;
-	}
-	public Serializable getSerializable() {
-		//TO BE CUSTOMIZED
-		return new Data();
-	}
-	public Bundle getBundle() {
+	public abstract Serializable getSerializable();
+	
+	public Bundle toBundle() {
 		Bundle b = new Bundle();
 		b.putSerializable("Data", getSerializable());
 		return b;

@@ -9,6 +9,15 @@
 		<mkdir dir="${build}"/>
 	</target>
 	<target name="prepare" depends="init" description="compile all source code">  
+		<!--apt srcdir="${src}"
+			 destdir="${build}"
+			 classpath="xyz.jar"
+			 debug="true"
+			 compile="false"
+			 factory="com.mycom.MyAnnotationProcessorFactory"
+			 factorypathref="my.factorypath.id"
+			 preprocessdir="${preprocess.dir}">
+		</apt-->
         <javac srcdir="${src}" destdir="${build}" includeantruntime="on">  
 			<classpath path="libs\codemodel-2.4.1.jar;libs\android.jar" />
             <compilerarg line="-encoding gbk" />  

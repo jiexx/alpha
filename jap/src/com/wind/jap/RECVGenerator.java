@@ -17,7 +17,6 @@ import com.sun.codemodel.JFieldVar;
 import com.sun.codemodel.JInvocation;
 import com.sun.codemodel.JSwitch;
 
-import com.wind.ui.CommunicationData;
 
 
 public class RECVGenerator implements Generator {

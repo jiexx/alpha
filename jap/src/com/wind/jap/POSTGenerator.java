@@ -50,12 +50,12 @@ public class POSTGenerator implements Generator {
 		JVar msg = onReceive.body().decl(codeMode.parseType("android.os.Message"), "msg");
 		onReceive.body().assign(msg, JExpr._new(codeMode.parseType("android.os.Message")));
 		onReceive.body().assign(msg.ref("what"), EVT_ID_ref(index));
-		onReceive.body().invoke(msg, "setData").arg(JExpr.ref("cd").invoke("getBundle"));
+		onReceive.body().invoke(msg, "setData").arg(JExpr.ref("cd").invoke("getResponseData"));
 		onReceive.body().invoke(handler, "sendMessage").arg(msg);
 		return proxy;
 	}
 	final private JMethod METHOD_POST_IMPL_DECL( JCodeModel codeMode, JDefinedClass defClazz, int index, JDefinedClass proxy ) throws ClassNotFoundException{
-		JType typeTarget = codeMode.parseType("java.lang.String");
+		JType typeTarget = codeMode.parseType("com.wind.ui.CommunicationData");
 		JMethod post = defClazz.method(JMod.PUBLIC + JMod.FINAL, typeTarget, arguments.get(index).nameOfTarget());
 		Argument arg = arguments.get(index);
 		for( int i = 0 ; i < arg.countOfTargetParams() ; i ++ ) {
@@ -72,7 +72,7 @@ public class POSTGenerator implements Generator {
 		JVar pxy = post.body().decl(proxy, "pxy");
 		post.body().assign(pxy, JExpr._new(proxy));
 		
-		JInvocation  communicationData = JExpr._new(codeMode.parseType("com.wind.ui.CommunicationData"));
+		JInvocation  communicationData = JExpr._new(typeTarget);
 		communicationData.arg(url);
 		post.body().invoke(pxy, "post").arg(communicationData);
 		post.body()._return(url);
