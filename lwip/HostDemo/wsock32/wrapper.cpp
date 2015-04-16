@@ -18,7 +18,7 @@ using namespace std;
 #pragma comment (linker, "/export:WSAAsyncGetProtoByNumber=original.WSAAsyncGetProtoByNumber,@104")
 #pragma comment (linker, "/export:WSAAsyncGetServByName=original.WSAAsyncGetServByName,@107")
 #pragma comment (linker, "/export:WSAAsyncGetServByPort=original.WSAAsyncGetServByPort,@106")
-#pragma comment (linker, "/export:WSAAsyncSelect=original.WSAAsyncSelect,@101")
+//#pragma comment (linker, "/export:WSAAsyncSelect=original.WSAAsyncSelect,@101")
 #pragma comment (linker, "/export:WSACancelAsyncRequest=original.WSACancelAsyncRequest,@108")
 #pragma comment (linker, "/export:WSACancelBlockingCall=original.WSACancelBlockingCall,@113")
 //#pragma comment (linker, "/export:WSACleanup=original.WSACleanup,@116")
@@ -88,51 +88,88 @@ using namespace std;
 #pragma comment (linker, "/export:WSCWriteNameSpaceOrder=original.WSCWriteNameSpaceOrder,@95")
 #pragma comment (linker, "/export:WSCWriteProviderOrder=original.WSCWriteProviderOrder,@96")
 #pragma comment (linker, "/export:__WSAFDIsSet=original.__WSAFDIsSet,@151")
-#pragma comment (linker, "/export:accept=original.accept,@1")
-#pragma comment (linker, "/export:bind=original.bind,@2")
-#pragma comment (linker, "/export:closesocket=original.closesocket,@3")
-#pragma comment (linker, "/export:connect=original.connect,@4")
+//#pragma comment (linker, "/export:accept=original.accept,@1")
+//#pragma comment (linker, "/export:bind=original.bind,@2")
+//#pragma comment (linker, "/export:closesocket=original.closesocket,@3")
+//#pragma comment (linker, "/export:connect=original.connect,@4")
 #pragma comment (linker, "/export:freeaddrinfo=original.freeaddrinfo,@97")
 #pragma comment (linker, "/export:getaddrinfo=original.getaddrinfo,@98")
 #pragma comment (linker, "/export:gethostbyaddr=original.gethostbyaddr,@51")
-#pragma comment (linker, "/export:gethostbyname=original.gethostbyname,@52")
+//#pragma comment (linker, "/export:gethostbyname=original.gethostbyname,@52")
 #pragma comment (linker, "/export:gethostname=original.gethostname,@57")
 #pragma comment (linker, "/export:getnameinfo=original.getnameinfo,@99")
-#pragma comment (linker, "/export:getpeername=original.getpeername,@5")
+//#pragma comment (linker, "/export:getpeername=original.getpeername,@5")
 #pragma comment (linker, "/export:getprotobyname=original.getprotobyname,@53")
 #pragma comment (linker, "/export:getprotobynumber=original.getprotobynumber,@54")
 #pragma comment (linker, "/export:getservbyname=original.getservbyname,@55")
 #pragma comment (linker, "/export:getservbyport=original.getservbyport,@56")
-#pragma comment (linker, "/export:getsockname=original.getsockname,@6")
+//#pragma comment (linker, "/export:getsockname=original.getsockname,@6")
 #pragma comment (linker, "/export:getsockopt=original.getsockopt,@7")
-#pragma comment (linker, "/export:htonl=original.htonl,@8")
-#pragma comment (linker, "/export:htons=original.htons,@9")
-#pragma comment (linker, "/export:inet_addr=original.inet_addr,@11")
-#pragma comment (linker, "/export:inet_ntoa=original.inet_ntoa,@12")
-#pragma comment (linker, "/export:ioctlsocket=original.ioctlsocket,@10")
+//#pragma comment (linker, "/export:htonl=original.htonl,@8")
+//#pragma comment (linker, "/export:htons=original.htons,@9")
+//#pragma comment (linker, "/export:inet_addr=original.inet_addr,@11")
+//#pragma comment (linker, "/export:inet_ntoa=original.inet_ntoa,@12")
+//#pragma comment (linker, "/export:ioctlsocket=original.ioctlsocket,@10")
 #pragma comment (linker, "/export:listen=original.listen,@13")
 #pragma comment (linker, "/export:ntohl=original.ntohl,@14")
-#pragma comment (linker, "/export:ntohs=original.ntohs,@15")
-#pragma comment (linker, "/export:recv=original.recv,@16")
-#pragma comment (linker, "/export:recvfrom=original.recvfrom,@17")
+//#pragma comment (linker, "/export:ntohs=original.ntohs,@15")
+//#pragma comment (linker, "/export:recv=original.recv,@16")
+//#pragma comment (linker, "/export:recvfrom=original.recvfrom,@17")
 #pragma comment (linker, "/export:select=original.select,@18")
-#pragma comment (linker, "/export:send=original.send,@19")
-#pragma comment (linker, "/export:sendto=original.sendto,@20")
+//#pragma comment (linker, "/export:send=original.send,@19")
+//#pragma comment (linker, "/export:sendto=original.sendto,@20")
 #pragma comment (linker, "/export:setsockopt=original.setsockopt,@21")
 #pragma comment (linker, "/export:shutdown=original.shutdown,@22")
-#pragma comment (linker, "/export:socket=original.socket,@23")
+//#pragma comment (linker, "/export:socket=original.socket,@23")
 
 
 
-typedef int (WINAPI *PFUN)(int s,const char * buf,int len,int flags);
-PFUN mySend,myRecv;
+typedef int				(__stdcall *PFUNC_WSAStartup)		(WORD wVersionRequested, LPWSADATA lpWSAData);
+typedef SOCKET			(__stdcall *PFUNC_socket)			(int af, int type, int protocol);
+typedef int				(__stdcall *PFUNC_connect)			(SOCKET s, const struct sockaddr *name, int namelen);
+typedef int				(__stdcall *PFUNC_send)				(SOCKET s, const char* buf, int len, int flags);
+typedef int				(__stdcall *PFUNC_sendto)			(SOCKET s, const char* buf, int len, int flags, const struct sockaddr *to, int tolen);
+typedef int				(__stdcall *PFUNC_recv)				(SOCKET s, char FAR * buf, int len, int flags);
+typedef int				(__stdcall *PFUNC_recvfrom)			(SOCKET s, char FAR * buf, int len, int flags, struct sockaddr* from, int* fromlen);
+typedef int				(__stdcall *PFUNC_bind)				(SOCKET s, const struct sockaddr* addr, int namelen);
+typedef int				(__stdcall *PFUNC_WSAAsyncSelect)	(SOCKET s, HWND hWnd, unsigned int wMsg, long lEvent);
+typedef SOCKET			(__stdcall *PFUNC_accept)			(SOCKET s, struct sockaddr* addr, int* addrlen);
+typedef int				(__stdcall *PFUNC_getpeername)		(SOCKET s, struct sockaddr* name, int* namelen);
+typedef int				(__stdcall *PFUNC_getsockname)		(SOCKET s, struct sockaddr* name, int* namelen);
+typedef struct hostent*	(__stdcall *PFUNC_gethostbyname)	(const char* name);
+typedef unsigned long	(__stdcall *PFUNC_htonl)			(unsigned long hostlong);
+typedef unsigned short	(__stdcall *PFUNC_htons)			(unsigned short hostshort);
+typedef unsigned long	(__stdcall *PFUNC_inet_addr)		(const char* cp);
+typedef char*			(__stdcall *PFUNC_inet_ntoa)		(__in struct in_addr in);
+typedef int				(__stdcall *PFUNC_ioctlsocket)		(SOCKET s, long cmd, unsigned long* argp);
+typedef unsigned short	(__stdcall *PFUNC_ntohs)			(unsigned short netshort);
+typedef int				(__stdcall *PFUNC_closesocket)		(SOCKET s);
+typedef int				(__stdcall *PFUNC_WSACleanup)		(void);
 
-typedef int (WINAPI *PFUN2)(int s,char *buf,int len,int flags,int to,int tolen);
-PFUN2 mySendto,myRecvfrom;
-void SendData(int cmd,int len,char *pbuffer,int sendORrecv);
+PFUNC_WSAStartup		_WSAStartup;
+PFUNC_socket			_socket;
+PFUNC_connect			_connect;
+PFUNC_send				_send;
+PFUNC_sendto			_sendto;
+PFUNC_recv				_recv;
+PFUNC_recvfrom			_recvfrom;
+PFUNC_bind				_bind;
+PFUNC_WSAAsyncSelect	_WSAAsyncSelect;
+PFUNC_accept			_accept;
+PFUNC_getpeername		_getpeername;
+PFUNC_getsockname		_getsockname;
+PFUNC_gethostbyname		_gethostbyname;
+PFUNC_htonl				_htonl;
+PFUNC_htons				_htons;
+PFUNC_inet_addr			_inet_addr;
+PFUNC_inet_ntoa			_inet_ntoa;
+PFUNC_ioctlsocket		_ioctlsocket;
+PFUNC_ntohs				_ntohs;
+PFUNC_closesocket		_closesocket;
+PFUNC_WSACleanup		_WSACleanup;
+
 
 HINSTANCE hws2_32;
-HWND ServerHwnd;
 fstream g_log;
 
 BOOL WINAPI DllMain( HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved	)
@@ -141,18 +178,35 @@ BOOL WINAPI DllMain( HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserve
 	{
 	case DLL_PROCESS_ATTACH:
 		hws2_32=LoadLibrary(L"original.dll");
-		mySend=(PFUN)GetProcAddress(hws2_32,"send");
-		myRecv=(PFUN)GetProcAddress(hws2_32,"recv");
-		mySendto=(PFUN2)GetProcAddress(hws2_32,"sendto");
-		myRecvfrom=(PFUN2)GetProcAddress(hws2_32,"recvfrom");
-		g_log.open("log.txt", ios::out);
+		_WSAStartup     = (PFUNC_WSAStartup    )GetProcAddress(hws2_32,"WSAStartup");
+		_socket         = (PFUNC_socket        )GetProcAddress(hws2_32,"socket");    
+		_connect        = (PFUNC_connect       )GetProcAddress(hws2_32,"connect");   
+		_send           = (PFUNC_send          )GetProcAddress(hws2_32,"send");      
+		_sendto         = (PFUNC_sendto        )GetProcAddress(hws2_32,"sendto");
+		_recv           = (PFUNC_recv          )GetProcAddress(hws2_32,"recv");  
+		_recvfrom       = (PFUNC_recvfrom      )GetProcAddress(hws2_32,"recvfrom");  
+		_bind           = (PFUNC_bind          )GetProcAddress(hws2_32,"bind");      
+		_WSAAsyncSelect = (PFUNC_WSAAsyncSelect)GetProcAddress(hws2_32,"WSAAsyncSelect");
+		_accept         = (PFUNC_accept        )GetProcAddress(hws2_32,"accept");    
+		_getpeername    = (PFUNC_getpeername   )GetProcAddress(hws2_32,"getpeername");
+		_getsockname    = (PFUNC_getsockname   )GetProcAddress(hws2_32,"getsockname"); 
+		_gethostbyname  = (PFUNC_gethostbyname )GetProcAddress(hws2_32,"gethostbyname");
+		_htonl          = (PFUNC_htonl         )GetProcAddress(hws2_32,"htonl");     
+		_htons          = (PFUNC_htons         )GetProcAddress(hws2_32,"htons");     
+		_inet_addr      = (PFUNC_inet_addr     )GetProcAddress(hws2_32,"inet_addr"); 
+		_inet_ntoa      = (PFUNC_inet_ntoa     )GetProcAddress(hws2_32,"inet_ntoa"); 
+		_ioctlsocket    = (PFUNC_ioctlsocket   )GetProcAddress(hws2_32,"ioctlsocket"); 
+		_ntohs          = (PFUNC_ntohs         )GetProcAddress(hws2_32,"ntohs");     
+		_closesocket    = (PFUNC_closesocket   )GetProcAddress(hws2_32,"closesocket");
+		_WSACleanup     = (PFUNC_WSACleanup    )GetProcAddress(hws2_32,"WSACleanup");
+		g_log.open("c:\\log.txt", ios::out);
 		g_log << "attach ..." << endl;
 		break;
 	case DLL_PROCESS_DETACH:
 		FreeLibrary(hws2_32);
 		g_log << "DLL_PROCESS_DETACH." << endl;
-		if (g_log.is_open())
-			g_log.close();
+		g_log.flush();
+		g_log.close();
 		break;
 	case DLL_THREAD_ATTACH:
 		break;
@@ -162,64 +216,123 @@ BOOL WINAPI DllMain( HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserve
 	return TRUE;
 }
 
-int WINAPI send_(int s,char *buf,int len,int flags)
+extern "C" void __stdcall log(const char* fmt, ...) 
 {
-	g_log.open("log.txt", ios::out);
-	g_log << "send." << endl;
-	return mySend(s,buf,len,flags);
-}
-int WINAPI sendto_(int s,char *buf,int len,int flags,int to,int tolen)
-{
-	g_log.open("log.txt", ios::out);
-	g_log << "sendto." << endl;
-	return mySendto(s,buf,len,flags,to,tolen);
-}
-extern "C" __declspec(dllexport) int WINAPI recv(int s,char *buf,int len,int flags)
-{
-	int rt;
-	g_log << "recv." << endl;
-	rt=myRecv(s,buf,len,flags);
-	return rt;
-}
-extern "C" __declspec(dllexport) int WINAPI recvfrom(int s,char *buf,int len,int flags,int from,int fromlen)
-{
-	int rt;
-	g_log << "recvfrom." << endl;
-	rt=myRecvfrom(s,buf,len,flags,from,fromlen);
-	return rt;
-}
-#define WSADESCRIPTION_LEN      256
-#define WSASYS_STATUS_LEN       128
 
-typedef struct WSAData {
-        WORD                    wVersion;
-        WORD                    wHighVersion;
-#ifdef _WIN64
-        unsigned short          iMaxSockets;
-        unsigned short          iMaxUdpDg;
-        char FAR *              lpVendorInfo;
-        char                    szDescription[WSADESCRIPTION_LEN+1];
-        char                    szSystemStatus[WSASYS_STATUS_LEN+1];
-#else
-        char                    szDescription[WSADESCRIPTION_LEN+1];
-        char                    szSystemStatus[WSASYS_STATUS_LEN+1];
-        unsigned short          iMaxSockets;
-        unsigned short          iMaxUdpDg;
-        char FAR *              lpVendorInfo;
-#endif
-} WSADATA;
-
-typedef WSADATA FAR *LPWSADATA;
-extern "C" int __stdcall  WSAStartup(
-    WORD wVersionRequested,
-   LPWSADATA lpWSAData
-)
-{
-	g_log << "WSAStartup." << endl;
-	return -1;
 }
-int WINAPI WSACleanup_(void)
+
+extern "C" int __stdcall  WSAStartup(WORD wVersionRequested, LPWSADATA lpWSAData)
 {
-	g_log << "WSACleanup." << endl;
-	return 0;
+	g_log << "WSAStartup: " << endl;
+	return _WSAStartup(wVersionRequested, lpWSAData);
+}
+extern "C"  SOCKET __stdcall socket (int af, int type, int protocol)
+{
+	g_log << "socket: " << endl;
+	return _socket (af, type, protocol);
+}
+extern "C" int __stdcall connect(SOCKET s, const struct sockaddr* name, int namelen)
+{
+	g_log << "connect: ";
+	g_log.write(name->sa_data, 14);
+	g_log << endl;
+	return _connect(s, name, namelen);
+}
+extern "C" int __stdcall send (SOCKET s, const char* buf, int len, int flags)
+{
+	g_log << "sendto: ";
+	g_log.write(buf, len);
+	g_log << endl;
+	return _send(s, buf, len, flags);
+}
+extern "C" int __stdcall sendto (SOCKET s, const char* buf, int len, int flags, const struct sockaddr *to, int tolen)
+{
+	g_log << "sendto. ";
+	g_log.write(buf, len);
+	g_log << endl;
+	return _sendto(s, buf, len, flags, to, tolen);
+}
+extern "C" int __stdcall recv (SOCKET s, char* buf, int len, int flags)
+{
+	int r = _recv (s, buf, len, flags);
+	g_log << "recv: " << endl;
+	return r;
+}
+extern "C" int __stdcall recvfrom (SOCKET s, char* buf, int len, int flags, struct sockaddr* from, int* fromlen)
+{ 
+	int r = _recvfrom (s, buf, len, flags, from, fromlen);
+	g_log << "recvfrom: " << endl;
+	return r;
+}
+extern "C" int __stdcall bind (SOCKET s, const struct sockaddr* addr, int namelen)
+{
+	g_log << "bind: " << endl;
+	return _bind (s, addr, namelen);
+}
+extern "C" int __stdcall WSAAsyncSelect(SOCKET s, HWND hWnd, unsigned int wMsg, long lEvent)
+{
+	int r = _WSAAsyncSelect(s, hWnd, wMsg, lEvent);
+	g_log << "WSAAsyncSelect: " << endl;
+	return r;
+}
+extern "C" SOCKET __stdcall accept (SOCKET s, struct sockaddr* addr, int* addrlen)
+{
+	int r = _accept (s, addr, addrlen);
+	g_log << "accept: " << endl;
+	return r;
+}
+extern "C" int __stdcall getpeername(SOCKET s, struct sockaddr* name, int* namelen)
+{
+	g_log << "getpeername: " << endl;
+	return _getpeername(s, name, namelen);
+}
+extern "C" int __stdcall getsockname(SOCKET s, struct sockaddr* name, int* namelen)
+{
+	g_log << "getsockname: " << endl;
+	return _getsockname(s, name, namelen);
+}
+extern "C" struct hostent* __stdcall gethostbyname(const char* name)
+{
+	g_log << "gethostbyname: " << name << endl;
+	return _gethostbyname(name);
+}
+extern "C" unsigned long __stdcall htonl(unsigned long hostlong)
+{
+	g_log << "htonl: " << hostlong << endl;
+	return _htonl(hostlong);
+}
+extern "C" unsigned short __stdcall htons (unsigned short hostshort)
+{
+	g_log << "htons: " << hostshort << endl;
+	return _htons(hostshort);
+}
+extern "C" unsigned long __stdcall inet_addr (const char* cp)
+{
+	g_log << "inet_addr: " << cp << endl;
+	return _inet_addr(cp);
+}
+extern "C" char* __stdcall inet_ntoa (struct in_addr in)
+{
+	g_log << "inet_ntoa: " << endl;
+	return _inet_ntoa(in);
+}
+extern "C" int __stdcall ioctlsocket (SOCKET s, long cmd, unsigned long* argp)
+{
+	g_log << "ioctlsocket: " << cmd << endl;
+	return _ioctlsocket(s, cmd, argp);
+}
+extern "C" unsigned short __stdcall ntohs (unsigned short netshort)
+{
+	g_log << "ntohs: " << netshort << endl;
+	return _ntohs(netshort);
+}
+extern "C" int __stdcall closesocket ( IN SOCKET s)
+{
+	g_log << "closesocket: " << endl;
+	return _closesocket(s);
+}
+extern "C" int __stdcall WSACleanup(void)
+{
+	g_log << "WSACleanup: " << endl;
+	return _WSACleanup();
 }

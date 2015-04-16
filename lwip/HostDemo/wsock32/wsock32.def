@@ -2,4 +2,23 @@ LIBRARY wsock32.dll
 
 EXPORTS 
 WSAStartup=WSAStartup @115
-WSACleanup=WSACleanup_ @116
+socket=socket @23
+connect=connect @4
+send=send @19
+sendto=sendto @20
+recv=recv @16
+recvfrom=recvfrom @17
+bind=bind @2
+WSAAsyncSelect=WSAAsyncSelect @101
+accept=accept @1
+getpeername=getpeername @5
+getsockname=getsockname @6
+gethostbyname=gethostbyname @52
+htonl=htonl @8
+htons=htons @9
+inet_addr=inet_addr @11
+inet_ntoa=inet_ntoa @12
+ioctlsocket=ioctlsocket @10
+ntohs=ntohs @15
+closesocket=closesocket @3
+WSACleanup=WSACleanup @116
