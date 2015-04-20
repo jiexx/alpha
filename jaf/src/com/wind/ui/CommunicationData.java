@@ -65,7 +65,8 @@ public class CommunicationData {
 	}
 	public CommunicationData( Bundle b ) {
 		request = null;
-		response.data = b.getParcelable("ptr");
+		Object obj = b.getParcelable("ptr");
+		response = CustomizedDataManager.INSTANCE.createResponse( obj.getClass(), obj ); ;
 	}
 	public Bundle getResponseData() {
 		if( response == null )

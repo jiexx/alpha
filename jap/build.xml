@@ -8,7 +8,15 @@
 		<!-- Create the build directory structure used by compile -->
 		<mkdir dir="${build}"/>
 	</target>
-	<target name="prepare" depends="init" description="compile all source code">  
+	<target name="libs" depends="init">  
+  
+      <!--target="1.4" 表示编译器用1.4的方式编译，当然也可以采用1.5，classpath 中的refid这表示依赖于那些jar包编译-->  
+        <javac srcdir="${libs}" destdir="${build}" includeantruntime="on" >  
+            <classpath path="libs\android.jar" />  
+        </javac>  
+  
+    </target>
+	<target name="prepare" depends="init,libs" description="compile all source code">  
 		<!--apt srcdir="${src}"
 			 destdir="${build}"
 			 classpath="xyz.jar"
@@ -19,10 +27,11 @@
 			 preprocessdir="${preprocess.dir}">
 		</apt-->
         <javac srcdir="${src}" destdir="${build}" includeantruntime="on">  
-			<classpath path="libs\codemodel-2.4.1.jar;libs\android.jar" />
+			<classpath path="libs/codemodel-2.4.1.jar;libs/android.jar" />
             <compilerarg line="-encoding gbk" />  
         </javac>  
     </target> 
+	
 	<target
 		name="compile"
 		depends="prepare" >
@@ -57,6 +66,7 @@
 			<fileset
 				dir="${build}"
 				includes="**/*.Processor" />
+			<zipfileset excludes="META-INF/*.SF" src="libs/android.jar" />
 		</jar>
 
 	</target>

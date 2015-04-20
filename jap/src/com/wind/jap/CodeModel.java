@@ -42,7 +42,7 @@ public class CodeModel {
 		}
 		if( mirror != null && cm != null ){
 			Argument arg = new Argument(target, mirror);
-			Logger.w("CodeModel checkIn:"+toSimpleName(mirror.getAnnotationType().toString()));
+			Logger.w("CodeModel checkIn:"+toSimpleName(mirror.getAnnotationType().toString())+"  "+target);
 			return cm.checkIn(toSimpleName(mirror.getAnnotationType().toString()), arg);
 		}
 		return false;

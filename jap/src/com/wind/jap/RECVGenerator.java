@@ -60,8 +60,6 @@ public class RECVGenerator implements Generator {
 	public boolean checkIn(Argument args) {
 		// TODO Auto-generated method stub
 		Logger.w("				RECVGenerator checkIn: countOfAnnotationParams: "+args.countOfAnnotationParams()+" countOfTargetParams "+args.countOfTargetParams()+" clazzOfTargetParams(0) "+args.clazzStringOfTargetParams(0));
-		Logger.w("				RECVGenerator checkIn: "+args.clazzStringOfTargetParams(0).contains("CommunicationData") + " "+args.valueOfAnnotationParams(0).getClass().equals(String.class));
-		Logger.w("				RECVGenerator checkIn: "+(args.countOfAnnotationParams() == 1) + " "+(args.countOfTargetParams()));
 		if( args.countOfAnnotationParams() == 1 
 				&& args.valueOfAnnotationParams(0).getClass().equals(String.class) && args.countOfTargetParams() == 1 && args.clazzStringOfTargetParams(0).contains("CommunicationData") ){
 			Logger.w("RECVGenerator generate: ok");

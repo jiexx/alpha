@@ -16,17 +16,16 @@ import java.util.LinkedList;
 
 public class ACTIVITYGenerator implements Generator {
 	Argument arguments;
-	final private void METHOD_ACTIVITY_ONCREATE( JCodeModel codeMode, JDefinedClass defClazz, int index ) throws ClassNotFoundException{
-		JMethod onCreate = defClazz.method(JMod.PUBLIC, void.class, "onCreate");
-		onCreate.param(codeMode.parseType("android.os.Bundle"), "savedInstanceState"); 
-		onCreate.body().invoke(JExpr._super(), "onCreate").arg(JExpr.ref("savedInstanceState"));
-		//onCreate.body().invoke("setContentView").arg(JExpr.ref("test")/*arguments.valueOfAnnotationParams(0).toString()*/);
+	final private void METHOD_ACTIVITY_ONCREATE( JCodeModel codeMode, JDefinedClass defClazz, int index, JMethod oncreate ) throws ClassNotFoundException{
+//		oncreate.param(codeMode.parseType("android.os.Bundle"), "savedInstanceState"); 
+//		oncreate.body().invoke(JExpr._super(), "onCreate").arg(JExpr.ref("savedInstanceState"));
+//		oncreate.body().invoke("setContentView").arg(JExpr.ref("R.id."+arguments.valueOfAnnotationParams(0).toString()));
 	}
 	@Override
 	public void generate(ClazzModel cm) {
 		// TODO Auto-generated method stub
 		try {
-			METHOD_ACTIVITY_ONCREATE( cm.self(), cm.clazz(), 0 );
+			METHOD_ACTIVITY_ONCREATE( cm.self(), cm.clazz(), 0, cm.ONCREATE() );
 		} catch (ClassNotFoundException e) {
 			// TODO Auto-generated catch block
 			Logger.e(e.getMessage());

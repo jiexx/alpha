@@ -17,10 +17,13 @@ import com.wind.ui.CommunicationProxy;
 
 
 public class CustomizedProxy {
-
-	public void onReceive( CommunicationData cm ) {
-
-	};
+	private CommunicationProxy cp;
+	public CustomizedProxy(CommunicationProxy c){
+		cp = c;
+	}
+	public void onReceive( CommunicationData cm ){
+		cp.onReceive(cm);
+	}
 	public void post( CommunicationData cm ){
 		Info info = CustomizedDataManager.INSTANCE.queryClass(cm);
 		

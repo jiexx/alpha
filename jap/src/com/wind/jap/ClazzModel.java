@@ -21,6 +21,7 @@ import com.sun.codemodel.JMod;
 import com.sun.codemodel.JSwitch;
 import com.sun.codemodel.writer.PrologCodeWriter;
 import com.wind.ui.ACTIVITY;
+import com.wind.ui.BUTTON;
 import com.wind.ui.POST;
 import com.wind.ui.RECV;
 import com.wind.ui.UITHREAD;
@@ -35,6 +36,7 @@ public class ClazzModel {
 	private JClass cls;
 	private JSwitch  hdl_swc = null;
 	private JFieldVar hdl = null;
+	private JMethod oncreate = null;
 	private JFieldVar delegator = null;
 	public ClazzModel(String packageName) {
 		pkg = packageName;
@@ -43,6 +45,7 @@ public class ClazzModel {
 		generators.put( "POST", 	new POSTGenerator() );
 		generators.put( "RECV", 	new RECVGenerator() );
 		generators.put( "UITHREAD", new UITHREADGenerator() );
+		generators.put( "BUTTON", new BUTTONGenerator() );
 	}
 	public static Set<String> getSupportedAnnotationTypes() {
 		Set<String> annotataions = new LinkedHashSet<String>();
@@ -50,13 +53,13 @@ public class ClazzModel {
 		annotataions.add(POST.class.getCanonicalName());
 		annotataions.add(RECV.class.getCanonicalName());
 		annotataions.add(UITHREAD.class.getCanonicalName());
+		annotataions.add(BUTTON.class.getCanonicalName() );
 		return annotataions;
 	}
 	public void start(String clazzName) {
 		cm = new JCodeModel();
 		cls = cm.ref(clazzName);
-		cm._package("android.os.Message");
-		cm._package("android.os.Bundle");
+		cm._package(pkg+".R");
 		Logger.w("ClazzModel start: " + cm._package("android.os.Message").getPackage().name() +" " + cm._package("android.os.Bundle").getPackage().name() );
 	}
 	public JCodeModel self() {
@@ -76,6 +79,14 @@ public class ClazzModel {
 	}
 	public String getNameOfRECVByPOST( String name ) {
 		return "";
+	}
+	public JMethod ONCREATE()  throws ClassNotFoundException{
+		if( oncreate == null ) {
+			oncreate = dc.method(JMod.PUBLIC, void.class, "onCreate");
+			oncreate.param(cm.parseType("android.os.Bundle"), "savedInstanceState"); 
+			oncreate.body().invoke(JExpr._super(), "onCreate").arg(JExpr.ref("savedInstanceState"));
+		}
+		return oncreate;
 	}
 	public JFieldVar HANDLERVAR() throws ClassNotFoundException{
 		if( hdl == null ) {

@@ -33,6 +33,10 @@ import javax.lang.model.element.VariableElement;
 public class Argument {
 	private Element target;
 	private AnnotationMirror mirror;
+	public Argument(Argument a){
+		target = a.target;
+		mirror = a.mirror;
+	}
 	public Argument(Element t, AnnotationMirror am){
 		target = t;
 		mirror = am;
