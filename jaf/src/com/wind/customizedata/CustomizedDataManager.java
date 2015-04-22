@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 import android.os.Parcelable;
 
-import com.iwindnet.launch.WindnetLaunch;
 import com.wind.book.CommitBookRequest;
 import com.wind.book.CountOfBook;
 import com.wind.book.CountOfBookRequest;
@@ -44,18 +43,29 @@ public enum CustomizedDataManager {
 		public int appClass;
 		public int cmdId;
 		public Class<?> response;
+		public CustomizedImpl impl;
+		public Info( int a, int c, Class<?> r, CustomizedImpl ci ) {
+			appClass = a;
+			cmdId = c;
+			response = r;
+			impl = ci;
+		}
 		public Info( int a, int c, Class<?> r ) {
 			appClass = a;
 			cmdId = c;
 			response = r;
+			impl = json;
 		}
 	}
+	private CustomizedImpl binary = new CustomizedBinaryImpl();
+	private CustomizedImpl http = new CustomizedHttpImpl();
+	private CustomizedImpl json = new CustomizedJSONImpl();
 	private Map<Class<?>, Info> table = new HashMap<Class<?>, Info>();
 	CustomizedDataManager() {
 		table.put(PhoneAuthenticodeRequest.class,	new Info(1005, 602,		PhoneAuthenticode.class) );
 		table.put(RegisterRequest .class,			new Info(1005, 603,		ErrorCode1.class) );
 		table.put(LoginRequest.class,				new Info(1005, 604,		LoginData.class) );
-		table.put(ChangeAvatarRequest.class,		new Info(1005, 605,		ErrorCode1.class) );
+		table.put(ChangeAvatarRequest.class,		new Info(1005, 605,		ErrorCode1.class,	binary) );
 		table.put(ChangeNickRequest.class,			new Info(1005, 606,		ErrorCode1.class) );
 		table.put(SetFamilyCodeRequest.class,		new Info(1005, 607,		ErrorCode1.class) );
 		table.put(ChangeContactRequest.class,		new Info(1005, 608,		ErrorCode1.class) );

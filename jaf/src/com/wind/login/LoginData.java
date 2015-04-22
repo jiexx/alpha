@@ -45,18 +45,24 @@ public class LoginData implements Parcelable  {
 			};
 		}
 		public static class UserInfo implements Parcelable {
-        	public int userID;
-        	public String userName;
+        	public int eid;
+        	public String pDomainId;
         	public String userPhone;
-        	public int appType;
+        	public int userType;
+        	public String userName;
+        	public int userID;
+        	public int eDomainId;
         	public UserInfo() {
         	}
         
 			protected UserInfo(Parcel in) {
-				userID = in.readInt();
-				userName = in.readString();
+				eid = in.readInt();
+				pDomainId = in.readString();
 				userPhone = in.readString();
-				appType = in.readInt();
+				userType = in.readInt();
+				userName = in.readString();
+				userID = in.readInt();
+				eDomainId = in.readInt();
 			}
 
 			@Override
@@ -66,10 +72,13 @@ public class LoginData implements Parcelable  {
 
 			@Override
 			public void writeToParcel(Parcel dest, int flags) {
-				dest.writeInt(userID);
-				dest.writeString(userName);
+				dest.writeInt(eid);
+				dest.writeString(pDomainId);
 				dest.writeString(userPhone);
-				dest.writeInt(appType);
+				dest.writeInt(userType);
+				dest.writeString(userName);
+				dest.writeInt(userID);
+				dest.writeInt(eDomainId);
 			}
 
 			@SuppressWarnings("unused")
@@ -85,22 +94,23 @@ public class LoginData implements Parcelable  {
 				}
 			};
 		}
-		public String sessionID;
-    	public long serverTime;
-        public UserInfo userInfo = new UserInfo();
-	    public ServerNode serverNodes[];
-	    public String IMUserAccount;
+		public UserInfo userInfo = new UserInfo();
+		public String IMUserAccount;
 	    public String IMPassword;
+	    public ServerNode serverNodes[];
+	    public long serverTime;
+		public String sessionID;
+		
 	    public Result(){
         }
         
 		protected Result(Parcel in) {
-			sessionID = in.readString();
-			serverTime = in.readLong();
 			userInfo = (UserInfo) in.readValue(UserInfo.class.getClassLoader());
-			serverNodes = (ServerNode[]) in.readArray(ServerNode.class.getClassLoader());
 			IMUserAccount = in.readString();
 			IMPassword = in.readString();
+			serverNodes = (ServerNode[]) in.readArray(ServerNode[].class.getClassLoader());
+			serverTime = in.readLong();
+			sessionID = in.readString();
 		}
 
 		@Override
@@ -110,12 +120,12 @@ public class LoginData implements Parcelable  {
 
 		@Override
 		public void writeToParcel(Parcel dest, int flags) {
-			dest.writeString(sessionID);
-			dest.writeLong(serverTime);
 			dest.writeValue(userInfo);
-			dest.writeArray(serverNodes);
 			dest.writeString(IMUserAccount);
 			dest.writeString(IMPassword);
+			dest.writeArray(serverNodes);
+			dest.writeLong(serverTime);
+			dest.writeString(sessionID);
 		}
 
 		@SuppressWarnings("unused")
@@ -131,19 +141,20 @@ public class LoginData implements Parcelable  {
 			}
 		};
 	};
+	public int errCode;
 	public String type;
 	public Result results = new Result();
 	public int status;
-	public int errCode;
+	
 	public LoginData() {
 		
 	}
         
     protected LoginData(Parcel in) {
+    	errCode = in.readInt();
     	type = in.readString();
         results = (Result) in.readValue(Result.class.getClassLoader());
         status = in.readInt();
-        errCode = in.readInt();
     }
 
     @Override

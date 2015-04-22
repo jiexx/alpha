@@ -53,7 +53,9 @@ public class POSTGenerator implements Generator {
 		onReceive.body().invoke(msg, "setData").arg(JExpr.ref("cd").invoke("getResponseData"));
 		onReceive.body().invoke(handler, "sendMessage").arg(msg);
 		
-		defClazz.field(JMod.PRIVATE + JMod.FINAL, proxy, "proxy", JExpr._new(proxy));
+		String target = arguments.get(index).nameOfTarget();
+		target = target.replaceFirst(target.substring(0, 1),target.substring(0, 1).toUpperCase()) ;
+		defClazz.field(JMod.PRIVATE + JMod.FINAL, proxy, "pxy"+target, JExpr._new(proxy));
 		return proxy;
 	}
 	final private JMethod METHOD_POST_IMPL_DECL( JCodeModel codeMode, JDefinedClass defClazz, int index, JDefinedClass proxy ) throws ClassNotFoundException{
@@ -71,7 +73,10 @@ public class POSTGenerator implements Generator {
 		}
 		post.body().assign(url, superPost);
 		
-		JFieldRef pxy = JExpr.ref("proxy");
+		String target = arguments.get(index).nameOfTarget();
+		target = target.replaceFirst(target.substring(0, 1),target.substring(0, 1).toUpperCase()) ;
+		
+		JFieldRef pxy = JExpr.ref("pxy"+target);
 
 		JInvocation  communicationData = JExpr._new(typeTarget);
 		communicationData.arg(url);
@@ -108,6 +113,7 @@ public class POSTGenerator implements Generator {
 	        e.printStackTrace(pw);
 	        pw.flush();
 	        sw.flush();
+	        Logger.w(sw.getBuffer().toString());
 		} finally {
 			proxies = null;
 		}

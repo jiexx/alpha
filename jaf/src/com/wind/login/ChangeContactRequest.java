@@ -50,14 +50,14 @@ public class ChangeContactRequest implements Parcelable {
 		}
 
 		public String uid;
-		public Address addressList[];
+		public Address[] addressList;
 
 		public Param() {
 		}
 
 		protected Param(Parcel in) {
 			uid = in.readString();
-			addressList = (Address[]) in.readArray(Address.class.getClassLoader());
+			addressList = (Address[]) in.readArray(Address[].class.getClassLoader());
 		}
 
 		@Override

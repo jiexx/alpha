@@ -4,7 +4,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 public class ChangeAvatarRequest implements Parcelable {
-	public int userId;
+	public long userId;
 	public int imgLen;
 	public byte imgcontent[];
 	public ChangeAvatarRequest(){
@@ -25,7 +25,7 @@ public class ChangeAvatarRequest implements Parcelable {
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        dest.writeInt(userId);
+        dest.writeLong(userId);
         dest.writeInt(imgLen);
         dest.writeByteArray(imgcontent);
     }
